@@ -4,8 +4,8 @@ unless defined? Tagz
     unless defined?(Tagz::VERSION)
       Tagz::VERSION = [
         Tagz::VERSION_MAJOR = 5,
-        Tagz::VERSION_MINOR = 0,
-        Tagz::VERSION_TEENY = 1 
+        Tagz::VERSION_MINOR = 1,
+        Tagz::VERSION_TEENY = 0 
       ].join('.')
       def Tagz.version() Tagz::VERSION end
     end
@@ -21,8 +21,8 @@ unless defined? Tagz
       unless options.empty?
         attributes = ' ' << 
           options.map do |key, value|
-            key = XChar.escape key.to_s
-            value = XChar.escape value.to_s
+            key = Tagz.escape_attribute(key)
+            value = Tagz.escape_attribute(value)
             if value =~ %r/"/
               raise ArgumentError, value if value =~ %r/'/
               value = "'#{ value }'"
@@ -36,7 +36,7 @@ unless defined? Tagz
         attributes = ''
       end
 
-      tagz.concat "<#{ name }#{ attributes }>"
+      tagz.push "<#{ name }#{ attributes }>"
 
       if content.empty?
         if block
@@ -47,11 +47,11 @@ unless defined? Tagz
             unless(tagz.size > size)
               tagz[-1] = "/>"
             else
-              tagz.concat "</#{ name }>"
+              tagz.push "</#{ name }>"
             end
           else
             tagz << value.to_s unless(tagz.size > size)
-            tagz.concat "</#{ name }>"
+            tagz.push "</#{ name }>"
           end
 
         end
@@ -62,7 +62,7 @@ unless defined? Tagz
           value = block.call(tagz)
           tagz << value.to_s unless(tagz.size > size)
         end
-        tagz.concat "</#{ name }>"
+        tagz.push "</#{ name }>"
       end
 
       tagz
@@ -71,7 +71,7 @@ unless defined? Tagz
   # close_tag
   #
     def __tagz tag, *a, &b
-      tagz.concat "</#{ tag }>"
+      tagz.push "</#{ tag }>"
     end
 
   # access tagz doc and enclose tagz operations
@@ -132,10 +132,10 @@ unless defined? Tagz
           Element.new(*a, &b)
         when :puts
           tagz do
-            tagz.concat("\n")
+            tagz.push("\n")
             unless a.empty?
-              tagz.concat(a.join)
-              tagz.concat("\n")
+              tagz.push(a.join)
+              tagz.push("\n")
             end
           end
       end
@@ -151,15 +151,22 @@ unless defined? Tagz
       end
       alias_method 'e', 'element'
 
+      alias_method 'write', 'concat'
+      alias_method 'push', 'concat'
+
       def << string 
         case string
           when Document
             super string.to_s
           else
-            super XChar.escape(string.to_s)
+            super Tagz.escape_content(string)
         end
         self
       end
+      def concat string
+        self << string
+      end
+      #alias_method 'concat', '<<'
 
       def escape(*strings)
         XChar.escape(strings.join)
@@ -167,10 +174,8 @@ unless defined? Tagz
       alias_method 'h', 'escape'
 
       def puts string
-        concat "#{ string }\n"
+        write "#{ string }\n"
       end
-      alias_method 'push', 'concat'
-      alias_method 'write', 'concat'
 
       def document
         self
@@ -195,8 +200,8 @@ unless defined? Tagz
         unless options.empty?
           ' ' << 
             options.map do |key, value|
-              key = XChar.escape key.to_s
-              value = XChar.escape value.to_s
+              key = Tagz.escape_attribute(key)
+              value = Tagz.escape_attribute(value)
               if value =~ %r/"/
                 raise ArgumentError, value if value =~ %r/'/
                 value = "'#{ value }'"
@@ -297,8 +302,75 @@ unless defined? Tagz
       end
     end
 
-    def Tagz.escapeHTML string
-      XChar.escape(string)
+    def Tagz.escapeHTML(*strings)
+      XChar.escape(strings.join)
+    end
+    def Tagz.escape(*strings)
+      XChar.escape(strings.join)
+    end
+
+    NoEscape = lambda{|v|v}
+
+  # support for configuring attribute escaping
+  #
+    def Tagz.escape_attribute!(*args, &block)
+      previous = @escape_attribute if defined?(@escape_attribute)
+      unless args.empty? and block.nil?
+        value = block ? block : args.shift
+        @escape_attribute = value ? value.to_proc : NoEscape
+        return previous
+      end
+      @escape_attribute
+    end
+
+    def Tagz.escape_attributes!(*args, &block)
+      Tagz.escape_attribute!(*args, &block)
+    end
+
+    def Tagz.escape_attribute(value)
+      @escape_attribute.call(value.to_s)
+    end
+
+  # default escape
+  #
+    escape_attribute!{|value| XChar.escape(value)}
+
+  # support for configuring content escaping
+  #
+    def Tagz.escape_content!(*args, &block)
+      previous = @escape_content if defined?(@escape_content)
+      unless args.empty? and block.nil?
+        value = block ? block : args.shift
+        @escape_content = value ? value.to_proc : NoEscape
+        return previous
+      end
+      @escape_content
+    end
+
+    def Tagz.escape_contents!(*args, &block)
+      Tagz.escape_content!(*args, &block)
+    end
+
+    def Tagz.escape_content(value)
+      @escape_content.call(value.to_s)
+    end
+
+  # default escape
+  #
+    escape_content!{|value| XChar.escape(value)}
+
+  # make tagz escape nothing
+  #
+    def Tagz.i_know_what_the_hell_i_am_doing!
+      Tagz.escape_attributes! false
+      Tagz.escape_content! false
+    end
+
+  # make tagz escape everything 
+  #
+    def Tagz.i_do_not_know_what_the_hell_i_am_doing!
+      escape_attribute!{|value| XChar.escape(value)}
+      escape_content!{|value| XChar.escape(value)}
     end
 
     module Globally; include Tagz; end

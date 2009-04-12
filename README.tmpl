@@ -93,7 +93,31 @@ INSTALL
 
   gem install tagz
 
+URIS
+
+  http://github.com/ahoward/tagz/tree/master
+  http://rubyforge.org/projects/codeforpeople
+
 HISTORY
+  5.1.0
+    - attribute/content auto-escaping can be turned off with
+
+        Tagz.i_know_what_the_hell_i_am_doing
+
+      and turned back on with
+
+        Tagz.i_do_not_know_what_the_hell_i_am_doing
+
+      attribute and content escaping can be configured individually too. see
+      tests for examples
+
+
+      thanks Dan Fitzpatrick
+
+    - << and concat escape (if configured) while puts and push and write do not
+
+      thanks JoelVanderWerf
+
   5.0.0
     - introduce better escaping for attributes using xchar.rb approach
     - indroduce smart escaping for content

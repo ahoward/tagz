@@ -550,4 +550,122 @@ class TagzTest < Test::Unit::TestCase
     assert_equal expected, actual
     assert_nothing_raised{ c.b }
   end
+
+  def test_460
+    c = Class.new{
+      include Tagz.globally
+      def a
+        div_( 'a>b' => 'a>b' ){ 'content' }
+      end
+    }.new
+
+    actual = nil
+    assert_nothing_raised{ actual=c.a}
+    expected = %(<div a&gt;b="a&gt;b">content</div>)
+    assert_equal expected, actual
+
+    original = Tagz.escape_attribute! false
+    assert original
+    actual = nil
+    assert_nothing_raised{ actual=c.a}
+    expected = %(<div a>b="a>b">content</div>)
+    assert_equal expected, actual
+
+    Tagz.escape_attribute! original
+    actual = nil
+    assert_nothing_raised{ actual=c.a}
+    expected = %(<div a&gt;b="a&gt;b">content</div>)
+    assert_equal expected, actual
+
+    upcased = Tagz.escape_attribute! lambda{|value| original.call(value).upcase} 
+    assert upcased
+    actual = nil
+    assert_nothing_raised{ actual=c.a}
+    expected = %(<div A&GT;B="A&GT;B">content</div>)
+    assert_equal expected, actual
+
+    Tagz.escape_attributes! lambda{|value| upcased.call(value).downcase} 
+    actual = nil
+    assert_nothing_raised{ actual=c.a}
+    expected = %(<div a&gt;b="a&gt;b">content</div>)
+    assert_equal expected, actual
+  ensure
+    Tagz.escape_attributes!(original)
+  end
+
+  def test_470
+    c = Class.new{
+      include Tagz.globally
+      def a
+        div_( ){ 'a>b' }
+      end
+    }.new
+
+    actual = nil
+    assert_nothing_raised{ actual=c.a}
+    expected = %(<div>a&gt;b</div>)
+    assert_equal expected, actual
+
+    original = Tagz.escape_content! false
+    assert original
+    actual = nil
+    assert_nothing_raised{ actual=c.a}
+    expected = %(<div>a>b</div>)
+    assert_equal expected, actual
+
+    upcased = Tagz.escape_content! lambda{|value| original.call(value).upcase} 
+    assert upcased
+    actual = nil
+    assert_nothing_raised{ actual=c.a}
+    expected = %(<div>A&GT;B</div>)
+    assert_equal expected, actual
+
+    Tagz.escape_content! original
+    actual = nil
+    assert_nothing_raised{ actual=c.a}
+    expected = %(<div>a&gt;b</div>)
+    assert_equal expected, actual
+  ensure
+    Tagz.escape_content!(original)
+  end
+
+  def test_480
+    c = Class.new{
+      include Tagz.globally
+      def a
+        div_( 'a>b' => '<>'){ 'a>b' }
+      end
+    }.new
+
+    Tagz.i_know_what_the_hell_i_am_doing!
+    actual = nil
+    assert_nothing_raised{ actual=c.a}
+    expected = %(<div a>b="<>">a>b</div>)
+    assert_equal expected, actual
+  ensure
+    Tagz.i_do_not_know_what_the_hell_i_am_doing!
+  end
+
+  def test_490
+    c = Class.new{
+      include Tagz.globally
+      def a
+        div_{
+          __
+          tagz.concat 'a>b'
+          __
+          tagz.write 'c>d'
+          __
+          tagz << 'e>f'
+          __
+          tagz.push 'g>h'
+        }
+      end
+    }.new
+
+    actual = nil
+    assert_nothing_raised{ actual=c.a}
+    expected = "<div>\na&gt;b\nc>d\ne&gt;f\ng>h</div>"
+    assert_equal expected, actual
+  end
 end
