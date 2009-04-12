@@ -1,0 +1,40 @@
+8
+
+dir
+767
+svn+ssh://ahoward@rubyforge.org/var/svn/codeforpeople/tagz/trunk/lib
+svn+ssh://ahoward@rubyforge.org/var/svn/codeforpeople
+
+
+
+2009-03-23T22:32:47.865625Z
+767
+ahoward
+
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+29922619-e960-4932-8d85-0e0be7f1775a
+
+tagz.rb
+file
+773
+
+
+
+2009-03-24T17:54:28.000000Z
+84261c3492593e1cb37c212543331349
+2009-03-25T07:04:08.834319Z
+773
+ahoward
+

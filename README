@@ -1,0 +1,363 @@
+NAME
+
+  tagz.rb
+
+SYNOPSIS
+
+  require Tagz
+
+  include Tagz.globally
+
+  a_(:href => "/foo"){ "bar" }  #=>  <a href="/foo">bar</a> 
+
+DESCRIPTION
+
+  tagz.rb is generates html, xml, or any sgml variant like a small ninja
+  running across the backs of a herd of giraffes swatting of heads like a
+  mark-up weedwacker.  weighing in at less than 300 lines of code tagz.rb adds
+  an html/xml/sgml syntax to ruby that is both unobtrusive, safe, and available
+  globally to objects without the need for any builder or superfluous objects.
+  tagz.rb is designed for applications that generate html to be able to do so
+  easily in any context without heavyweight syntax or scoping issues, like a
+  ninja sword through butter.
+
+FEATURES
+
+  - use as a library or mixin
+
+  - simple, clean and consistent mark-up that is easy to visually
+    distinguish from other ruby methods
+
+  - auto-compatibility with rails/actionview
+
+  - ability to independently open and close tagz in markup
+
+  - intelligent auto-escaping of both attributes and content for both html
+    and xml
+
+  - validate your html/xml with 'ruby -c' syntax check
+
+  - generally bitchin
+
+  - no lame method_missing approach that prevents tagz like 'type' from being
+    generated
+
+RAILS
+  
+  in config/environment.rb
+
+    require 'tagz'
+
+  in a helper
+
+    def list_of_users
+      ul_(:class => 'users'){
+        @users.each{|user| li_{ user }}
+      }
+    end
+
+  in a view
+
+    <%=
+      table_{ 
+        rows.each do |row|
+          tr_{
+            row.each do |cell|
+              td_{ cell }
+            end
+          }
+        end
+      }
+    %>
+
+  in a controller
+
+    def ajax_responder
+      text =
+        tagz{
+          table_{ 
+            rows.each do |row|
+              tr_{
+                row.each do |cell|
+                  td_{ cell }
+                end
+              }
+            end
+          }
+        }
+
+      render :text => text
+    end
+
+INSTALL
+
+  gem install tagz
+
+HISTORY
+  5.0.0
+    - introduce better escaping for attributes using xchar.rb approach
+    - indroduce smart escaping for content
+    - make Tagz.globally kick ass more hard
+    - note that this version is not backward compatibile if you were relying
+      on tagz never escaping any content should be an ok upgrade for most
+      applications
+
+  4.6.0
+    - fix a bug with self closing tagz that had crept in 1.0.0 -> 4.2.0.  thx
+      jeremy hinegardner
+
+    - added tests from 1.0.0 back into svn
+
+  4.4.0
+    - remove dependancy on cgi lib, tagz is now completely standalone
+
+  4.3.0
+    - detect rails and auto-include into ActionController::Base and include
+      globally into ActionView::Base
+
+  4.2.0
+    - general lib cleanup
+    - introduction of dual-mixin technique (Tagz.globally)
+    - few small bug fixes
+    - ninja tales
+
+SAMPLES
+
+  <========< samples/a.rb >========>
+
+  ~ > cat samples/a.rb
+
+    #
+    # in the simplest case tagz generates html using a syntax which safely mixes
+    # in to any object
+    #
+    
+    require 'tagz'
+    include Tagz.globally
+    
+    class GiraffeModel
+      def link
+        a_(:href => "/giraffe/neck/42"){ "whack!" }
+      end
+    end
+    
+    puts GiraffeModel.new.link
+
+  ~ > ruby samples/a.rb
+
+    <a href="/giraffe/neck/42">whack!</a>
+
+
+  <========< samples/b.rb >========>
+
+  ~ > cat samples/b.rb
+
+    #
+    # tagz.rb mixes quite easily with your favourite templating engine, avoiding
+    # the need for '<% rows.each do |row| %> ... <% row.each do |cell| %> '
+    # madness and other types of logic to be coded in the templating language,
+    # leaving templating to template engines and logic and looping to ruby -
+    # unencumbered by extra funky syntax.  in rails tagz will automatically be
+    # available in your erb templates.
+    #
+    
+    require 'tagz'
+    include Tagz.globally
+    
+    require 'erb'
+    
+    rows = %w( a b c ), %w( 1 2 3 )
+    
+    template = ERB.new <<-ERB
+      <html>
+        <body>
+          <%=
+            table_{
+              rows.each do |row|
+                tr_{
+                  row.each do |cell|
+                    td_{ cell }
+                  end
+                }
+              end
+            }
+          %>
+        </body>
+      </html>
+    ERB
+    
+    puts template.result(binding)
+    
+
+  ~ > ruby samples/b.rb
+
+      <html>
+        <body>
+          <table><tr><td>a</td><td>b</td><td>c</td></tr><tr><td>1</td><td>2</td><td>3</td></tr></table>
+        </body>
+      </html>
+
+
+  <========< samples/c.rb >========>
+
+  ~ > cat samples/c.rb
+
+    #
+    # once you've learned to generate html using tagz you're primed to generate
+    # xml too
+    #
+    
+    require 'tagz'
+    include Tagz.globally
+    
+    doc =
+      xml_{
+        giraffe_{ 'large' }
+        ninja_{ 'small' }
+      }
+    
+    puts doc
+
+  ~ > ruby samples/c.rb
+
+    <xml><giraffe>large</giraffe><ninja>small</ninja></xml>
+
+
+  <========< samples/d.rb >========>
+
+  ~ > cat samples/d.rb
+
+    #
+    # tagz.rb doesn't cramp your style, allowing even invalid html to be
+    # generated.  note the use of the 'tagz' method, which can be used both to
+    # capture output and to append content to the top of the stack.
+    #
+    
+    require 'tagz'
+    include Tagz.globally
+    
+    def header
+      tagz{
+        html_
+          body_(:class => 'ninja-like', :id => 'giraffe-slayer')
+    
+          ___ "<!-- this is the header -->"
+      }
+    end
+    
+    def footer
+      tagz{
+        ___ "<!-- this is the footer -->"
+    
+        body_
+          html_
+      }
+    end
+    
+    puts header, footer
+
+  ~ > ruby samples/d.rb
+
+    <html><body class="ninja-like" id="giraffe-slayer">
+    <!-- this is the header -->
+    
+    <!-- this is the footer -->
+    <body><html>
+
+
+  <========< samples/e.rb >========>
+
+  ~ > cat samples/e.rb
+
+    #
+    # tagz.rb allows a safer method of mixin which requires any tagz methods to be
+    # insider a tagz block - tagz generating methods outside a tagz block with
+    # raise an error if tagz is included this way.  also notice that the error is
+    # reported from where it was raised - not from the bowels of the the tagz.rb
+    # lib.
+    #
+    
+    require 'tagz'
+    include Tagz
+    
+    puts tagz{
+     html_{ 'works only in here' }
+    }
+    
+    begin
+      html_{ 'not out here' }
+    rescue Object => e
+      p :backtrace => e.backtrace
+    end
+    
+
+  ~ > ruby samples/e.rb
+
+    <html>works only in here</html>
+    {:backtrace=>["samples/e.rb:17"]}
+
+
+  <========< samples/f.rb >========>
+
+  ~ > cat samples/f.rb
+
+    #
+    # tagz.rb can generate really compact html.  this is great to save bandwidth
+    # but can sometimes make reading the generated html a bit rough.  of course
+    # using tidy or the dom inspector in firebug obviates the issue; nevertheless
+    # it's sometime nice to break things up a little.  you can use 'tagz << "\n"'
+    # or the special shorthand '__' or '___' to accomplish this
+    #
+    
+    require 'tagz'
+    include Tagz.globally
+    
+    html =
+      div_{
+        span_{ true }
+        __
+        span_{ false }  # hey ryan, i fixed this ;-)
+        ___
+    
+        ___ 'foo & escaped bar'
+      }
+    
+    puts html
+
+  ~ > ruby samples/f.rb
+
+    <div><span>true</span>
+    <span>false</span>
+    
+    foo & escaped bar
+    </div>
+
+
+  <========< samples/g.rb >========>
+
+  ~ > cat samples/g.rb
+
+    # tagz gives you low-level control of the output and makes even dashersized
+    # xml tagz easy enough to work with
+    #
+    
+    require 'tagz'
+    include Tagz.globally
+    
+    xml =
+      root_{
+        tagz__('foo-bar', :key => 'foo&bar'){ 'content' }
+    
+        tagz__('bar-foo')
+        tagz.concat 'content'
+        tagz.concat tagz.escape('foo&bar')
+        __tagz('bar-foo')
+      }
+    
+    puts xml
+    
+
+  ~ > ruby samples/g.rb
+
+    <root><foo-bar key="foo&amp;bar">content</foo-bar><bar-foo>contentfoo&amp;bar</bar-foo></root>
+
