@@ -12,16 +12,16 @@ def header
     html_
       body_(:class => 'ninja-like', :id => 'giraffe-slayer')
 
-      ___ "<!-- this is the header -->"
+      __ "<!-- this is the header -->"
   }
 end
 
 def footer
   tagz{
-    ___ "<!-- this is the footer -->"
+    __ "<!-- this is the footer -->"
 
-    body_
-      html_
+      _body
+    _html
   }
 end
 
