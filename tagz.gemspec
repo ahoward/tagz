@@ -20,9 +20,9 @@ Gem::Specification::new do |spec|
   spec.require_path = "lib" 
 
   spec.has_rdoc = true
-  spec.test_suite_file = "test/#{ lib }.rb" if File::file?("test/#{ lib }.rb")
+  spec.test_suite_file = "test/#{ lib }.rb" # if File::file?("test/#{ lib }.rb")
 
-  spec.extensions << "extconf.rb" if File::exists? "extconf.rb"
+  # spec.extensions << "extconf.rb" if File::exists? "extconf.rb"
 
   spec.rubyforge_project = 'codeforpeople'
   spec.author = "Ara T. Howard"
