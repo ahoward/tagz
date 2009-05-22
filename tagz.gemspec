@@ -8,11 +8,11 @@ Gem::Specification::new do |spec|
   spec.summary = lib 
 
   spec.files = Dir::glob("**/**").delete_if{|f| f =~ %r/\.(svn|tmp)/}
-  spec.executables = Dir::glob("bin/*").delete_if{|f| f =~ %r/\.(svn|tmp)/}.map{|exe| File.basename(exe)}
-  
+  #spec.executables = Dir::glob("bin/*").delete_if{|f| f =~ %r/\.(svn|tmp)/}.map{|exe| File.basename(exe)}
+
   spec.require_path = "lib" 
 
-  spec.has_rdoc = true
+  #spec.has_rdoc = true
   spec.test_files = "test/#{ lib }.rb"
 
   spec.rubyforge_project = 'codeforpeople'
