@@ -3,7 +3,7 @@
 require 'rubygems'
 
 Gem::Specification::new do |spec|
-  $VERBOSE = nil
+  #$VERBOSE = nil
 
   shiteless = lambda do |list|
     list.delete_if do |file|
@@ -12,10 +12,13 @@ Gem::Specification::new do |spec|
     end
   end
 
-  spec.name = $lib 
-  spec.version = $version 
+  lib = 'tagz'
+  version = '5.1.0'
+
+  spec.name = lib 
+  spec.version = version 
   spec.platform = Gem::Platform::RUBY
-  spec.summary = $lib 
+  spec.summary = lib 
 
   spec.files = shiteless[Dir::glob("**/**")]
   spec.executables = shiteless[Dir::glob("bin/*")].map{|exe| File::basename exe}
@@ -23,7 +26,7 @@ Gem::Specification::new do |spec|
   spec.require_path = "lib" 
 
   spec.has_rdoc = true #File::exist? "doc" 
-  spec.test_suite_file = "test/#{ $lib }.rb" if File::file?("test/#{ $lib }.rb")
+  spec.test_suite_file = "test/#{ lib }.rb" if File::file?("test/#{ lib }.rb")
   #spec.add_dependency 'lib', '>= version'
   #spec.add_dependency 'fattr'
 
@@ -32,13 +35,13 @@ Gem::Specification::new do |spec|
   spec.rubyforge_project = 'codeforpeople'
   spec.author = "Ara T. Howard"
   spec.email = "ara.t.howard@gmail.com"
-  spec.homepage = "http://codeforpeople.com/lib/ruby/#{ $lib }/"
+  spec.homepage = "http://codeforpeople.com/lib/ruby/#{ lib }/"
 end
 
 
-BEGIN{ 
-  Dir.chdir(File.dirname(__FILE__))
-  $lib = 'tagz'
-  Kernel.load "./lib/#{ $lib }.rb"
-  $version = Tagz.version
-}
+#BEGIN{ 
+  #Dir.chdir(File.dirname(__FILE__))
+  #$lib = 'tagz'
+  #Kernel.load "./lib/#{ $lib }.rb"
+  #$version = Tagz.version
+#}
