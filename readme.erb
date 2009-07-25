@@ -58,17 +58,15 @@ RAILS
 
   in a view
 
-    <%=
-      table_{ 
-        rows.each do |row|
-          tr_{
-            row.each do |cell|
-              td_{ cell }
-            end
-          }
-        end
-      }
-    %>
+    table_{ 
+      rows.each do |row|
+        tr_{
+          row.each do |cell|
+            td_{ cell }
+          end
+        }
+      end
+    }
 
   in a controller
 
@@ -99,6 +97,12 @@ URIS
   http://rubyforge.org/projects/codeforpeople
 
 HISTORY
+  6.0.0 
+    - reorganize lib to avoid dumping a few constants into the includee - aka
+    don't absolutely minimize namespace pollution. there is now reason to
+    thing this version shouldn't be backwards compat - i bumped the version
+    just in case
+
   5.1.0
     - attribute/content auto-escaping can be turned off with
 
@@ -147,4 +151,4 @@ HISTORY
 
 SAMPLES
 
-  @samples
+  <%= @samples %>

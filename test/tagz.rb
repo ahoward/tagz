@@ -668,4 +668,40 @@ class TagzTest < Test::Unit::TestCase
     expected = "<div>\na&gt;b\nc>d\ne&gt;f\ng>h</div>"
     assert_equal expected, actual
   end
+
+  def test_500
+    expected = actual = nil
+    Module.new do
+      before = constants
+      include Tagz
+      after = constants
+      expected = %w[ TagzConstants ]
+      actual = after - before
+    end
+    assert_equal expected, actual
+  end
+
+  def test_510
+    expected = actual = nil
+    Module.new do
+      before = constants
+      include Tagz.globally
+      after = constants
+      expected = %w[ TagzConstants ]
+      actual = after - before
+    end
+    assert_equal expected, actual
+  end
+
+  def test_520
+    expected = actual = nil
+    Module.new do
+      before = constants
+      include Tagz.privately
+      after = constants
+      expected = %w[ TagzConstants ]
+      actual = after - before
+    end
+    assert_equal expected, actual
+  end
 end
