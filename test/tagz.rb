@@ -474,8 +474,7 @@ class TagzTest < Test::Unit::TestCase
   end
 
   def test_390
-    expected = '<div class="bar&amp;foo&gt;">foo&amp;bar&gt;</div>'
-    # actual = tagz{ div_(:class => 'bar&foo>'){|t| t.h('foo&bar>') } }
+    expected = '<div class="bar&amp;foo&gt;">foo&bar></div>'
     actual = tagz{ div_(:class => 'bar&foo>'){ 'foo&bar>' } }
     assert_equal expected, actual
 
@@ -485,7 +484,7 @@ class TagzTest < Test::Unit::TestCase
   end
 
   def test_400
-    expected = '<div><span>foo&amp;bar</span></div>'
+    expected = '<div><span>foo&bar</span></div>'
     actual = tagz{ div_{ span_{ 'foo&bar' } } }
     assert_equal expected, actual
   end
@@ -603,27 +602,27 @@ class TagzTest < Test::Unit::TestCase
 
     actual = nil
     assert_nothing_raised{ actual=c.a}
-    expected = %(<div>a&gt;b</div>)
-    assert_equal expected, actual
-
-    original = Tagz.escape_content! false
-    assert original
-    actual = nil
-    assert_nothing_raised{ actual=c.a}
     expected = %(<div>a>b</div>)
     assert_equal expected, actual
 
-    upcased = Tagz.escape_content! lambda{|value| original.call(value).upcase} 
-    assert upcased
-    actual = nil
-    assert_nothing_raised{ actual=c.a}
-    expected = %(<div>A&GT;B</div>)
-    assert_equal expected, actual
-
-    Tagz.escape_content! original
+    original = Tagz.escape_content!(true)
+    assert original
     actual = nil
     assert_nothing_raised{ actual=c.a}
     expected = %(<div>a&gt;b</div>)
+    assert_equal expected, actual
+
+    upcased = Tagz.escape_content!(lambda{|value| original.call(value).upcase})
+    assert upcased
+    actual = nil
+    assert_nothing_raised{ actual=c.a}
+    expected = %(<div>A>B</div>)
+    assert_equal expected, actual
+
+    Tagz.escape_content!(original)
+    actual = nil
+    assert_nothing_raised{ actual=c.a}
+    expected = %(<div>a>b</div>)
     assert_equal expected, actual
   ensure
     Tagz.escape_content!(original)

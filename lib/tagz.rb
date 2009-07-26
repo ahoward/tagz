@@ -1,7 +1,7 @@
 unless defined? Tagz
 
   module Tagz
-    def Tagz.version() '6.0.0' end
+    def Tagz.version() '7.0.0' end
 
   private
 
@@ -134,12 +134,11 @@ unless defined? Tagz
       end
     end
 
-  # escape support
+  # escape utils
   #
     def Tagz.escapeHTML(*strings)
       XChar.escape(strings.join)
     end
-
     def Tagz.escape(*strings)
       XChar.escape(strings.join)
     end
@@ -150,23 +149,19 @@ unless defined? Tagz
       previous = @escape_attribute if defined?(@escape_attribute)
       unless args.empty? and block.nil?
         value = block ? block : args.shift
-        @escape_attribute = value ? value.to_proc : NoEscape
+        value = Escape if value==true
+        value = NoEscape if(value==false or value==nil)
+        @escape_attribute = value.to_proc
         return previous
       end
       @escape_attribute
     end
-
     def Tagz.escape_attributes!(*args, &block)
       Tagz.escape_attribute!(*args, &block)
     end
-
     def Tagz.escape_attribute(value)
       @escape_attribute.call(value.to_s)
     end
-
-  # default escape
-  #
-    escape_attribute!{|value| XChar.escape(value)}
 
   # support for configuring content escaping
   #
@@ -174,42 +169,55 @@ unless defined? Tagz
       previous = @escape_content if defined?(@escape_content)
       unless args.empty? and block.nil?
         value = block ? block : args.shift
-        @escape_content = value ? value.to_proc : NoEscape
+        value = Escape if value==true
+        value = NoEscape if(value==false or value==nil)
+        @escape_content = value.to_proc
         return previous
       end
       @escape_content
     end
-
     def Tagz.escape_contents!(*args, &block)
       Tagz.escape_content!(*args, &block)
     end
-
     def Tagz.escape_content(value)
       @escape_content.call(value.to_s)
     end
 
-  # default escape
+  # configure tagz escaping
   #
-    escape_content!{|value| XChar.escape(value)}
-
-  # make tagz escape nothing
-  #
+    def Tagz.escape!(options = {})
+      options = {:attributes => options, :content => options} unless options.is_a?(Hash)
+      escape_attributes = options[:attributes]||options['attributes']
+      escape_content = options[:content]||options['content']
+      Tagz.escape_attributes!(!!escape_attributes)
+      Tagz.escape_content!(!!escape_content)
+    end
     def Tagz.i_know_what_the_hell_i_am_doing!
-      Tagz.escape_attributes! false
-      Tagz.escape_content! false
+      escape!(false)
     end
-
-  # make tagz escape everything 
-  #
     def Tagz.i_do_not_know_what_the_hell_i_am_doing!
-      escape_attribute!{|value| XChar.escape(value)}
-      escape_content!{|value| XChar.escape(value)}
+      escape!(true)
+    end
+    def Tagz.xml_mode!
+      Tagz.escape!(
+        :attributes => true,
+        :content => true
+      )
+    end
+    def Tagz.html_mode!
+      Tagz.escape!(
+        :attributes => true,
+        :content => false
+      )
     end
 
+
+
+  # module shortcuts - namespace preserving
+  #
     def Tagz.globally
       Globally
     end
-
     def Tagz.privately
       Privately
     end
@@ -378,7 +386,8 @@ unless defined? Tagz
         end
       end
 
-      NoEscape = lambda{|v|v}
+      NoEscape = lambda{|*values| values.join}
+      Escape = lambda{|*values| XChar.escape(values.join)}
 
       module Globally; include ::Tagz; end
       module Privately; include ::Tagz; end
@@ -391,20 +400,20 @@ unless defined? Tagz
       TagzConstants.const_get(const)
     end
 
+  # allow access to instance methods via module handle
+  #
     %w( tagz tagz__ __tagz method_missing ).each{|m| module_function(m)}
   end
 
   def Tagz *argv, &block
-    if argv.empty? and block.nil?
-      ::Tagz
-    else
-      Tagz.tagz(*argv, &block)
-    end
+    (argv.empty? and block.nil?) ? ::Tagz : Tagz.tagz(*argv, &block)
   end
 
   if defined?(Rails)
+    _=ActionView,ActionView::Base,ActionController,ActionController::Base
     ActionView::Base.send(:include, Tagz.globally)
     ActionController::Base.send(:include, Tagz)
   end
 
+  Tagz.html_mode!
 end

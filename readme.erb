@@ -97,6 +97,28 @@ URIS
   http://rubyforge.org/projects/codeforpeople
 
 HISTORY
+  7.0.0
+    - * IMPORTANT * NOT BACKWARD COMPATIBLE (thus version bump)
+    the tagz functionality itself has not changed, but the defaults for
+    excaping have!  now tagz will escape attributes, but NOT content, in the
+    default mode.  you can easily configure something else with
+
+      Tagz.escape!(:content => true, :attributes => true)
+
+    which would be like saying
+
+      Tagz.xml_mode!
+
+    or
+
+      Tagz.escape!(:content => false, :attributes => true)
+
+    which would be like saying
+
+      Tagz.html_mode!
+
+    to repeat, the default is 'Tagz.html_mode!'
+
   6.0.0 
     - reorganize lib to avoid dumping a few constants into the includee - aka
     don't absolutely minimize namespace pollution. there is now reason to
