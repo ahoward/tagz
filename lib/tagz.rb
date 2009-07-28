@@ -1,237 +1,166 @@
 unless defined? Tagz
 
+# core tagz functions
+#
   module Tagz
-    def Tagz.version() '7.0.0' end
+    def Tagz.version() '7.1.0' end
 
   private
+    # access tagz doc and enclose tagz operations
+    #
+      def tagz document = nil, &block
+        @tagz ||= nil ## shut wornings up
+        previous = @tagz
 
-  # open_tag
-  #
-    def tagz__ name, *argv, &block
-      options = argv.last.is_a?(Hash) ? argv.pop : {}
-      content = argv
-
-      unless options.empty?
-        attributes = ' ' << 
-          options.map do |key, value|
-            key = Tagz.escape_attribute(key)
-            value = Tagz.escape_attribute(value)
-            if value =~ %r/"/
-              raise ArgumentError, value if value =~ %r/'/
-              value = "'#{ value }'"
-            else
-              raise ArgumentError, value if value =~ %r/"/
-              value = "\"#{ value }\""
-            end
-            [key, value].join('=')
-          end.join(' ')
-      else
-        attributes = ''
+        if block
+          @tagz ||= (Tagz.document.for(document) || Tagz.document.new)
+          begin
+            size = @tagz.size
+            value = instance_eval(&block)
+            @tagz << value unless(@tagz.size > size)
+            @tagz
+          ensure
+            @tagz = previous
+          end
+        else
+          document ? Tagz.document.for(document) : @tagz
+        end
       end
 
-      tagz.push "<#{ name }#{ attributes }>"
+    # open_tag
+    #
+      def tagz__ name, *argv, &block
+        options = argv.last.is_a?(Hash) ? argv.pop : {}
+        content = argv
 
-      if content.empty?
-        if block
-          size = tagz.size
-          value = block.call(tagz)
+        unless options.empty?
+          attributes = ' ' << 
+            options.map do |key, value|
+              key = Tagz.escape_attribute(key)
+              value = Tagz.escape_attribute(value)
+              if value =~ %r/"/
+                raise ArgumentError, value if value =~ %r/'/
+                value = "'#{ value }'"
+              else
+                raise ArgumentError, value if value =~ %r/"/
+                value = "\"#{ value }\""
+              end
+              [key, value].join('=')
+            end.join(' ')
+        else
+          attributes = ''
+        end
 
-          if value.nil?
-            unless(tagz.size > size)
-              tagz[-1] = "/>"
+        tagz.push "<#{ name }#{ attributes }>"
+
+        if content.empty?
+          if block
+            size = tagz.size
+            value = block.call(tagz)
+
+            if value.nil?
+              unless(tagz.size > size)
+                tagz[-1] = "/>"
+              else
+                tagz.push "</#{ name }>"
+              end
             else
+              tagz << value.to_s unless(tagz.size > size)
               tagz.push "</#{ name }>"
             end
-          else
+
+          end
+        else
+          tagz << content.join
+          if block
+            size = tagz.size
+            value = block.call(tagz)
             tagz << value.to_s unless(tagz.size > size)
-            tagz.push "</#{ name }>"
+          end
+          tagz.push "</#{ name }>"
+        end
+
+        tagz
+      end
+
+    # close_tag
+    #
+      def __tagz tag, *a, &b
+        tagz.push "</#{ tag }>"
+      end
+
+    # catch special tagz methods
+    #
+      def method_missing m, *a, &b
+        strategy =
+          case m.to_s
+            when %r/^(.*[^_])_(!)?$/o
+              :open_tag
+            when %r/^_([^_].*)$/o
+              :close_tag
+            when 'e'
+              :element
+            when '__', '___'
+              :puts
+            else
+              nil
           end
 
+        if(strategy.nil? or (tagz.nil? and not Tagz.globally===self))
+          begin
+            super
+          ensure
+            $!.set_backtrace caller(skip=1) if $!
+          end
         end
-      else
-        tagz << content.join
-        if block
-          size = tagz.size
-          value = block.call(tagz)
-          tagz << value.to_s unless(tagz.size > size)
-        end
-        tagz.push "</#{ name }>"
-      end
-
-      tagz
-    end
-
-  # close_tag
-  #
-    def __tagz tag, *a, &b
-      tagz.push "</#{ tag }>"
-    end
-
-  # access tagz doc and enclose tagz operations
-  #
-    def tagz document = nil, &block
-      @tagz ||= nil ## shut wornings up
-      previous = @tagz
-
-      if block
-        @tagz ||= (Document.for(document) || Document.new)
-        begin
-          size = @tagz.size
-          value = instance_eval(&block)
-          @tagz << value unless(@tagz.size > size)
-          @tagz
-        ensure
-          @tagz = previous
-        end
-      else
-        document ? Document.for(document) : @tagz
-      end
-    end
-
-  # catch special tagz methods
-  #
-    def method_missing m, *a, &b
-      strategy =
-        case m.to_s
-          when %r/^(.*[^_])_(!)?$/o
-            :open_tag
-          when %r/^_([^_].*)$/o
-            :close_tag
-          when 'e'
-            :element
-          when '__', '___'
-            :puts
-          else
-            nil
-        end
-
-      if(strategy.nil? or (tagz.nil? and not Globally===self))
-        begin
-          super
-        ensure
-          $!.set_backtrace caller(skip=1) if $!
-        end
-      end
-      
-      case strategy
-        when :open_tag
-          m, bang = $1, $2
-          b ||= lambda{} if bang
-          tagz{ tagz__(m, *a, &b) }
-        when :close_tag
-          m = $1
-          tagz{ __tagz(m, *a, &b) }
-        when :element
-          Element.new(*a, &b)
-        when :puts
-          tagz do
-            tagz.push("\n")
-            unless a.empty?
-              tagz.push(a.join)
+        
+        case strategy
+          when :open_tag
+            m, bang = $1, $2
+            b ||= lambda{} if bang
+            tagz{ tagz__(m, *a, &b) }
+          when :close_tag
+            m = $1
+            tagz{ __tagz(m, *a, &b) }
+          when :element
+            Tagz.element.new(*a, &b)
+          when :puts
+            tagz do
               tagz.push("\n")
+              unless a.empty?
+                tagz.push(a.join)
+                tagz.push("\n")
+              end
             end
-          end
+        end
       end
-    end
+  end
 
-  # escape utils
-  #
-    def Tagz.escapeHTML(*strings)
-      XChar.escape(strings.join)
-    end
-    def Tagz.escape(*strings)
-      XChar.escape(strings.join)
-    end
 
-  # support for configuring attribute escaping
+# supporting code
+#
+  module Tagz
+  # singleton_class access for ad-hoc method adding from inside namespace
   #
-    def Tagz.escape_attribute!(*args, &block)
-      previous = @escape_attribute if defined?(@escape_attribute)
-      unless args.empty? and block.nil?
-        value = block ? block : args.shift
-        value = Escape if value==true
-        value = NoEscape if(value==false or value==nil)
-        @escape_attribute = value.to_proc
-        return previous
-      end
-      @escape_attribute
-    end
-    def Tagz.escape_attributes!(*args, &block)
-      Tagz.escape_attribute!(*args, &block)
-    end
-    def Tagz.escape_attribute(value)
-      @escape_attribute.call(value.to_s)
-    end
-
-  # support for configuring content escaping
-  #
-    def Tagz.escape_content!(*args, &block)
-      previous = @escape_content if defined?(@escape_content)
-      unless args.empty? and block.nil?
-        value = block ? block : args.shift
-        value = Escape if value==true
-        value = NoEscape if(value==false or value==nil)
-        @escape_content = value.to_proc
-        return previous
-      end
-      @escape_content
-    end
-    def Tagz.escape_contents!(*args, &block)
-      Tagz.escape_content!(*args, &block)
-    end
-    def Tagz.escape_content(value)
-      @escape_content.call(value.to_s)
-    end
-
-  # configure tagz escaping
-  #
-    def Tagz.escape!(options = {})
-      options = {:attributes => options, :content => options} unless options.is_a?(Hash)
-      escape_attributes = options[:attributes]||options['attributes']
-      escape_content = options[:content]||options['content']
-      Tagz.escape_attributes!(!!escape_attributes)
-      Tagz.escape_content!(!!escape_content)
-    end
-    def Tagz.i_know_what_the_hell_i_am_doing!
-      escape!(false)
-    end
-    def Tagz.i_do_not_know_what_the_hell_i_am_doing!
-      escape!(true)
-    end
-    def Tagz.xml_mode!
-      Tagz.escape!(
-        :attributes => true,
-        :content => true
+    def Tagz.singleton_class(&block)
+      @singleton_class ||= (
+        class << Tagz
+          self
+        end
       )
-    end
-    def Tagz.html_mode!
-      Tagz.escape!(
-        :attributes => true,
-        :content => false
-      )
-    end
-
-
-
-  # module shortcuts - namespace preserving
-  #
-    def Tagz.globally
-      Globally
-    end
-    def Tagz.privately
-      Privately
+      block ? @singleton_class.module_eval(&block) : @singleton_class
     end
 
   # hide away our own shit to minimize pollution
   #
-    module TagzConstants
+    module Namespace
       class Document < ::String
         def Document.for other
           Document === other ? other : Document.new(other.to_s)
         end
 
         def element
-          Element.new(*a, &b)
+          Tagz.element.new(*a, &b)
         end
         alias_method 'e', 'element'
 
@@ -253,7 +182,7 @@ unless defined? Tagz
         #alias_method 'concat', '<<'
 
         def escape(*strings)
-          XChar.escape(strings.join)
+          Tagz.xchar.escape(strings.join)
         end
         alias_method 'h', 'escape'
 
@@ -278,6 +207,7 @@ unless defined? Tagz
           self
         end
       end
+      Tagz.singleton_class{ define_method(:document){ Document } }
 
       class Element < ::String
         def Element.attributes options
@@ -327,6 +257,7 @@ unless defined? Tagz
           end
         end
       end
+      Tagz.singleton_class{ define_method(:element){ Element } }
 
       module XChar
       # http://intertwingly.net/stories/2004/04/14/i18n.html#CleaningWindows
@@ -385,19 +316,98 @@ unless defined? Tagz
           ))
         end
       end
+      Tagz.singleton_class{ define_method(:xchar){ XChar } }
 
-      NoEscape = lambda{|*values| values.join}
-      Escape = lambda{|*values| XChar.escape(values.join)}
+      NoEscapeProc = lambda{|*values| values.join}
+      Tagz.singleton_class{ define_method(:no_escape_proc){ NoEscapeProc } }
 
-      module Globally; include ::Tagz; end
-      module Privately; include ::Tagz; end
+      EscapeProc = lambda{|*values| Tagz.xchar.escape(values.join)}
+      Tagz.singleton_class{ define_method(:escape_proc){ EscapeProc } }
+
+      module Globally; include Tagz; end
+      Tagz.singleton_class{ define_method(:globally){ Globally } }
+
+      module Privately; include Tagz; end
+      Tagz.singleton_class{ define_method(:privately){ Privately } }
     end
 
-  # const_missing support
+    remove_const(:Namespace)
+
+  # escape utils
   #
-    def Tagz.const_missing(const)
-      super unless TagzConstants.const_defined?(const)
-      TagzConstants.const_get(const)
+    def Tagz.escapeHTML(*strings)
+      Tagz.xchar.escape(strings.join)
+    end
+    def Tagz.escape(*strings)
+      Tagz.xchar.escape(strings.join)
+    end
+
+  # support for configuring attribute escaping
+  #
+    def Tagz.escape_attribute!(*args, &block)
+      previous = @escape_attribute if defined?(@escape_attribute)
+      unless args.empty? and block.nil?
+        value = block ? block : args.shift
+        value = Tagz.escape_proc if value==true
+        value = Tagz.no_escape_proc if(value==false or value==nil)
+        @escape_attribute = value.to_proc
+        return previous
+      end
+      @escape_attribute
+    end
+    def Tagz.escape_attributes!(*args, &block)
+      Tagz.escape_attribute!(*args, &block)
+    end
+    def Tagz.escape_attribute(value)
+      @escape_attribute.call(value.to_s)
+    end
+
+  # support for configuring content escaping
+  #
+    def Tagz.escape_content!(*args, &block)
+      previous = @escape_content if defined?(@escape_content)
+      unless args.empty? and block.nil?
+        value = block ? block : args.shift
+        value = Tagz.escape_proc if value==true
+        value = Tagz.no_escape_proc if(value==false or value==nil)
+        @escape_content = value.to_proc
+        return previous
+      end
+      @escape_content
+    end
+    def Tagz.escape_contents!(*args, &block)
+      Tagz.escape_content!(*args, &block)
+    end
+    def Tagz.escape_content(value)
+      @escape_content.call(value.to_s)
+    end
+
+  # configure tagz escaping
+  #
+    def Tagz.escape!(options = {})
+      options = {:attributes => options, :content => options} unless options.is_a?(Hash)
+      escape_attributes = options[:attributes]||options['attributes']
+      escape_content = options[:content]||options['content']
+      Tagz.escape_attributes!(!!escape_attributes)
+      Tagz.escape_content!(!!escape_content)
+    end
+    def Tagz.i_know_what_the_hell_i_am_doing!
+      escape!(false)
+    end
+    def Tagz.i_do_not_know_what_the_hell_i_am_doing!
+      escape!(true)
+    end
+    def Tagz.xml_mode!
+      Tagz.escape!(
+        :attributes => true,
+        :content => true
+      )
+    end
+    def Tagz.html_mode!
+      Tagz.escape!(
+        :attributes => true,
+        :content => false
+      )
     end
 
   # allow access to instance methods via module handle

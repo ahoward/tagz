@@ -674,7 +674,7 @@ class TagzTest < Test::Unit::TestCase
       before = constants
       include Tagz
       after = constants
-      expected = %w[ TagzConstants ]
+      expected = []
       actual = after - before
     end
     assert_equal expected, actual
@@ -686,7 +686,7 @@ class TagzTest < Test::Unit::TestCase
       before = constants
       include Tagz.globally
       after = constants
-      expected = %w[ TagzConstants ]
+      expected = []
       actual = after - before
     end
     assert_equal expected, actual
@@ -698,9 +698,25 @@ class TagzTest < Test::Unit::TestCase
       before = constants
       include Tagz.privately
       after = constants
-      expected = %w[ TagzConstants ]
+      expected = []
       actual = after - before
     end
     assert_equal expected, actual
+  end
+
+  def test_530
+    assert_nothing_raised{
+      code = <<-__
+        class C
+          Element=NoEscape=Document=XChar=Privately=Escape=Globally=42
+          include Tagz.globally
+          def a() tagz{ 42 } end
+        end
+        C.new.a()
+      __
+      assert_nothing_raised do
+        assert eval(code), '42'
+      end
+    }
   end
 end
