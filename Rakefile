@@ -35,11 +35,14 @@ task :gemspec do
     end
 
   lib         = This.lib
+  object      = This.object
   version     = This.version
   files       = shiteless[Dir::glob("**/**")]
   executables = shiteless[Dir::glob("bin/*")].map{|exe| File.basename(exe)}
   has_rdoc    = true #File.exist?('doc')
   test_files  = "test/#{ lib }.rb" if File.file?("test/#{ lib }.rb")
+  summary     = object.respond_to?(:summary) ? object.summary : "summary: #{ lib } kicks the ass"
+  description = object.respond_to?(:description) ? object.description : "description: #{ lib } kicks the ass"
 
   extensions = This.extensions
   if extensions.nil?
@@ -63,6 +66,7 @@ task :gemspec do
             spec.version = #{ version.inspect }
             spec.platform = Gem::Platform::RUBY
             spec.summary = #{ lib.inspect }
+            spec.description = #{ description.inspect }
 
             spec.files = #{ files.inspect }
             spec.executables = #{ executables.inspect }
@@ -185,9 +189,10 @@ BEGIN {
 
   version = ENV['VERSION']
   unless version
-    name = lib.capitalize
-    require "./lib/#{ lib }"
-    version = eval(name).send(:version)
+    require "./lib/#{ This.lib }"
+    This.name = lib.capitalize
+    This.object = eval(This.name)
+    version = This.object.send(:version)
   end
   This.version = version
 

@@ -3,7 +3,23 @@ unless defined? Tagz
 # core tagz functions
 #
   module Tagz
-    def Tagz.version() '7.2.0' end
+    def Tagz.version()
+      '7.2.1'
+    end
+
+    def Tagz.description()
+      <<-__
+        tagz.rb is generates html, xml, or any sgml variant like a small ninja
+        running across the backs of a herd of giraffes swatting of heads like
+        a mark-up weedwacker.  weighing in at less than 300 lines of code
+        tagz.rb adds an html/xml/sgml syntax to ruby that is both unobtrusive,
+        safe, and available globally to objects without the need for any
+        builder or superfluous objects.  tagz.rb is designed for applications
+        that generate html to be able to do so easily in any context without
+        heavyweight syntax or scoping issues, like a ninja sword through
+        butter.
+      __
+    end
 
   private
     # access tagz doc and enclose tagz operations
