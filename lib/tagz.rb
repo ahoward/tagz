@@ -3,7 +3,7 @@ unless defined? Tagz
 # core tagz functions
 #
   module Tagz
-    def Tagz.version() '7.1.0' end
+    def Tagz.version() '7.2.0' end
 
   private
     # access tagz doc and enclose tagz operations
@@ -74,7 +74,7 @@ unless defined? Tagz
           tagz << content.join
           if block
             size = tagz.size
-            value = block.call(tagz)
+            value = block.arity.abs >= 1 ? block.call(tagz) : block.call()
             tagz << value.to_s unless(tagz.size > size)
           end
           tagz.push "</#{ name }>"
@@ -151,9 +151,21 @@ unless defined? Tagz
       block ? @singleton_class.module_eval(&block) : @singleton_class
     end
 
-  # hide away our own shit to minimize pollution
+  # hide away our own shit to minimize namespace pollution
   #
     module Namespace
+      namespace = self
+
+      Tagz.singleton_class{
+        define_method(:namespace){ |*args|
+          if args.empty?
+            namespace
+          else
+            namespace.const_get(args.first.to_sym)
+          end
+        }
+      }
+
       class Document < ::String
         def Document.for other
           Document === other ? other : Document.new(other.to_s)
@@ -207,7 +219,7 @@ unless defined? Tagz
           self
         end
       end
-      Tagz.singleton_class{ define_method(:document){ Document } }
+      Tagz.singleton_class{ define_method(:document){ Tagz.namespace(:Document) } }
 
       class Element < ::String
         def Element.attributes options
@@ -257,7 +269,7 @@ unless defined? Tagz
           end
         end
       end
-      Tagz.singleton_class{ define_method(:element){ Element } }
+      Tagz.singleton_class{ define_method(:element){ Tagz.namespace(:Element) } }
 
       module XChar
       # http://intertwingly.net/stories/2004/04/14/i18n.html#CleaningWindows
@@ -316,21 +328,20 @@ unless defined? Tagz
           ))
         end
       end
-      Tagz.singleton_class{ define_method(:xchar){ XChar } }
+      Tagz.singleton_class{ define_method(:xchar){ Tagz.namespace(:XChar) } }
 
       NoEscapeProc = lambda{|*values| values.join}
-      Tagz.singleton_class{ define_method(:no_escape_proc){ NoEscapeProc } }
+      Tagz.singleton_class{ define_method(:no_escape_proc){ Tagz.namespace(:NoEscapeProc) } }
 
       EscapeProc = lambda{|*values| Tagz.xchar.escape(values.join)}
-      Tagz.singleton_class{ define_method(:escape_proc){ EscapeProc } }
+      Tagz.singleton_class{ define_method(:escape_proc){ Tagz.namespace(:EscapeProc) } }
 
       module Globally; include Tagz; end
-      Tagz.singleton_class{ define_method(:globally){ Globally } }
+      Tagz.singleton_class{ define_method(:globally){ Tagz.namespace(:Globally) } }
 
       module Privately; include Tagz; end
-      Tagz.singleton_class{ define_method(:privately){ Privately } }
+      Tagz.singleton_class{ define_method(:privately){ Tagz.namespace(:Privately) } }
     end
-
     remove_const(:Namespace)
 
   # escape utils
