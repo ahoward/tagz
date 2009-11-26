@@ -4,7 +4,7 @@ unless defined? Tagz
 #
   module Tagz
     def Tagz.version()
-      '7.2.1'
+      '7.2.2'
     end
 
     def Tagz.description()
@@ -169,196 +169,197 @@ unless defined? Tagz
 
   # hide away our own shit to minimize namespace pollution
   #
-    module Namespace
-      namespace = self
+    class << Tagz
+      module Namespace
+        namespace = self
 
-      Tagz.singleton_class{
-        define_method(:namespace){ |*args|
-          if args.empty?
-            namespace
-          else
-            namespace.const_get(args.first.to_sym)
-          end
-        }
-      }
-
-      class Document < ::String
-        def Document.for other
-          Document === other ? other : Document.new(other.to_s)
-        end
-
-        def element
-          Tagz.element.new(*a, &b)
-        end
-        alias_method 'e', 'element'
-
-        alias_method 'write', 'concat'
-        alias_method 'push', 'concat'
-
-        def << string 
-          case string
-            when Document
-              super string.to_s
+        Tagz.singleton_class{
+          define_method(:namespace){ |*args|
+            if args.empty?
+              namespace
             else
-              super Tagz.escape_content(string)
+              namespace.const_get(args.first.to_sym)
+            end
+          }
+        }
+
+        class Document < ::String
+          def Document.for other
+            Document === other ? other : Document.new(other.to_s)
           end
-          self
-        end
-        def concat string
-          self << string
-        end
-        #alias_method 'concat', '<<'
 
-        def escape(*strings)
-          Tagz.xchar.escape(strings.join)
-        end
-        alias_method 'h', 'escape'
-
-        def puts string
-          write "#{ string }\n"
-        end
-
-        def document
-          self
-        end
-        alias_method 'doc', 'document'
-
-        def + other
-          self.dup << other
-        end
-
-        def to_s
-          self
-        end
-
-        def to_str
-          self
-        end
-      end
-      Tagz.singleton_class{ define_method(:document){ Tagz.namespace(:Document) } }
-
-      class Element < ::String
-        def Element.attributes options
-          unless options.empty?
-            ' ' << 
-              options.map do |key, value|
-                key = Tagz.escape_attribute(key)
-                value = Tagz.escape_attribute(value)
-                if value =~ %r/"/
-                  raise ArgumentError, value if value =~ %r/'/
-                  value = "'#{ value }'"
-                else
-                  raise ArgumentError, value if value =~ %r/"/
-                  value = "\"#{ value }\""
-                end
-                [key, value].join('=')
-              end.join(' ')
-          else
-            ''
+          def element
+            Tagz.element.new(*a, &b)
           end
-        end
+          alias_method 'e', 'element'
 
-        attr 'name'
+          alias_method 'write', 'concat'
+          alias_method 'push', 'concat'
 
-        def initialize name, *argv, &block
-          options = {}
-          content = []
-
-          argv.each do |arg|
-            case arg
-              when Hash
-                options.update arg
+          def << string 
+            case string
+              when Document
+                super string.to_s
               else
-                content.push arg
+                super Tagz.escape_content(string)
+            end
+            self
+          end
+          def concat string
+            self << string
+          end
+          #alias_method 'concat', '<<'
+
+          def escape(*strings)
+            Tagz.xchar.escape(strings.join)
+          end
+          alias_method 'h', 'escape'
+
+          def puts string
+            write "#{ string }\n"
+          end
+
+          def document
+            self
+          end
+          alias_method 'doc', 'document'
+
+          def + other
+            self.dup << other
+          end
+
+          def to_s
+            self
+          end
+
+          def to_str
+            self
+          end
+        end
+        Tagz.singleton_class{ define_method(:document){ Tagz.namespace(:Document) } }
+
+        class Element < ::String
+          def Element.attributes options
+            unless options.empty?
+              ' ' << 
+                options.map do |key, value|
+                  key = Tagz.escape_attribute(key)
+                  value = Tagz.escape_attribute(value)
+                  if value =~ %r/"/
+                    raise ArgumentError, value if value =~ %r/'/
+                    value = "'#{ value }'"
+                  else
+                    raise ArgumentError, value if value =~ %r/"/
+                    value = "\"#{ value }\""
+                  end
+                  [key, value].join('=')
+                end.join(' ')
+            else
+              ''
             end
           end
 
-          content.push block.call if block
-          content.compact!
+          attr 'name'
 
-          @name = name.to_s
+          def initialize name, *argv, &block
+            options = {}
+            content = []
 
-          if content.empty?
-            replace "<#{ @name }#{ Element.attributes options }>"
-          else
-            replace "<#{ @name }#{ Element.attributes options }>#{ content.join }</#{ name }>"
+            argv.each do |arg|
+              case arg
+                when Hash
+                  options.update arg
+                else
+                  content.push arg
+              end
+            end
+
+            content.push block.call if block
+            content.compact!
+
+            @name = name.to_s
+
+            if content.empty?
+              replace "<#{ @name }#{ Element.attributes options }>"
+            else
+              replace "<#{ @name }#{ Element.attributes options }>#{ content.join }</#{ name }>"
+            end
           end
         end
-      end
-      Tagz.singleton_class{ define_method(:element){ Tagz.namespace(:Element) } }
+        Tagz.singleton_class{ define_method(:element){ Tagz.namespace(:Element) } }
 
-      module XChar
-      # http://intertwingly.net/stories/2004/04/14/i18n.html#CleaningWindows
-      #
-        CP1252 = {
-          128 => 8364, # euro sign
-          130 => 8218, # single low-9 quotation mark
-          131 =>  402, # latin small letter f with hook
-          132 => 8222, # double low-9 quotation mark
-          133 => 8230, # horizontal ellipsis
-          134 => 8224, # dagger
-          135 => 8225, # double dagger
-          136 =>  710, # modifier letter circumflex accent
-          137 => 8240, # per mille sign
-          138 =>  352, # latin capital letter s with caron
-          139 => 8249, # single left-pointing angle quotation mark
-          140 =>  338, # latin capital ligature oe
-          142 =>  381, # latin capital letter z with caron
-          145 => 8216, # left single quotation mark
-          146 => 8217, # right single quotation mark
-          147 => 8220, # left double quotation mark
-          148 => 8221, # right double quotation mark
-          149 => 8226, # bullet
-          150 => 8211, # en dash
-          151 => 8212, # em dash
-          152 =>  732, # small tilde
-          153 => 8482, # trade mark sign
-          154 =>  353, # latin small letter s with caron
-          155 => 8250, # single right-pointing angle quotation mark
-          156 =>  339, # latin small ligature oe
-          158 =>  382, # latin small letter z with caron
-          159 =>  376} # latin capital letter y with diaeresis
+        module XChar
+        # http://intertwingly.net/stories/2004/04/14/i18n.html#CleaningWindows
+        #
+          CP1252 = {
+            128 => 8364, # euro sign
+            130 => 8218, # single low-9 quotation mark
+            131 =>  402, # latin small letter f with hook
+            132 => 8222, # double low-9 quotation mark
+            133 => 8230, # horizontal ellipsis
+            134 => 8224, # dagger
+            135 => 8225, # double dagger
+            136 =>  710, # modifier letter circumflex accent
+            137 => 8240, # per mille sign
+            138 =>  352, # latin capital letter s with caron
+            139 => 8249, # single left-pointing angle quotation mark
+            140 =>  338, # latin capital ligature oe
+            142 =>  381, # latin capital letter z with caron
+            145 => 8216, # left single quotation mark
+            146 => 8217, # right single quotation mark
+            147 => 8220, # left double quotation mark
+            148 => 8221, # right double quotation mark
+            149 => 8226, # bullet
+            150 => 8211, # en dash
+            151 => 8212, # em dash
+            152 =>  732, # small tilde
+            153 => 8482, # trade mark sign
+            154 =>  353, # latin small letter s with caron
+            155 => 8250, # single right-pointing angle quotation mark
+            156 =>  339, # latin small ligature oe
+            158 =>  382, # latin small letter z with caron
+            159 =>  376} # latin capital letter y with diaeresis
 
-      # http://www.w3.org/TR/REC-xml/#dt-chardata
-      #
-        PREDEFINED = {
-          38 => '&amp;', # ampersand
-          60 => '&lt;',  # left angle bracket
-          62 => '&gt;'}  # right angle bracket
+        # http://www.w3.org/TR/REC-xml/#dt-chardata
+        #
+          PREDEFINED = {
+            38 => '&amp;', # ampersand
+            60 => '&lt;',  # left angle bracket
+            62 => '&gt;'}  # right angle bracket
 
-      # http://www.w3.org/TR/REC-xml/#charsets
-      #
-        VALID = [[0x9, 0xA, 0xD], (0x20..0xD7FF), (0xE000..0xFFFD), (0x10000..0x10FFFF)]
+        # http://www.w3.org/TR/REC-xml/#charsets
+        #
+          VALID = [[0x9, 0xA, 0xD], (0x20..0xD7FF), (0xE000..0xFFFD), (0x10000..0x10FFFF)]
 
-        def XChar.escape(string)
-          string.unpack('U*').map{|n| xchr(n)}.join # ASCII, UTF-8
-        rescue
-          string.unpack('C*').map{|n| xchr(n)}.join # ISO-8859-1, WIN-1252
+          def XChar.escape(string)
+            string.unpack('U*').map{|n| xchr(n)}.join # ASCII, UTF-8
+          rescue
+            string.unpack('C*').map{|n| xchr(n)}.join # ISO-8859-1, WIN-1252
+          end
+
+          def XChar.xchr(n)
+            (@xchr ||= {})[n] ||= ((
+              n = XChar::CP1252[n] || n
+              n = 42 unless XChar::VALID.find{|range| range.include? n}
+              XChar::PREDEFINED[n] or (n<128 ? n.chr : "&##{n};")
+            ))
+          end
         end
+        Tagz.singleton_class{ define_method(:xchar){ Tagz.namespace(:XChar) } }
 
-        def XChar.xchr(n)
-          (@xchr ||= {})[n] ||= ((
-            n = XChar::CP1252[n] || n
-            n = 42 unless XChar::VALID.find{|range| range.include? n}
-            XChar::PREDEFINED[n] or (n<128 ? n.chr : "&##{n};")
-          ))
-        end
+        NoEscapeProc = lambda{|*values| values.join}
+        Tagz.singleton_class{ define_method(:no_escape_proc){ Tagz.namespace(:NoEscapeProc) } }
+
+        EscapeProc = lambda{|*values| Tagz.xchar.escape(values.join)}
+        Tagz.singleton_class{ define_method(:escape_proc){ Tagz.namespace(:EscapeProc) } }
+
+        module Globally; include Tagz; end
+        Tagz.singleton_class{ define_method(:globally){ Tagz.namespace(:Globally) } }
+
+        module Privately; include Tagz; end
+        Tagz.singleton_class{ define_method(:privately){ Tagz.namespace(:Privately) } }
       end
-      Tagz.singleton_class{ define_method(:xchar){ Tagz.namespace(:XChar) } }
-
-      NoEscapeProc = lambda{|*values| values.join}
-      Tagz.singleton_class{ define_method(:no_escape_proc){ Tagz.namespace(:NoEscapeProc) } }
-
-      EscapeProc = lambda{|*values| Tagz.xchar.escape(values.join)}
-      Tagz.singleton_class{ define_method(:escape_proc){ Tagz.namespace(:EscapeProc) } }
-
-      module Globally; include Tagz; end
-      Tagz.singleton_class{ define_method(:globally){ Tagz.namespace(:Globally) } }
-
-      module Privately; include Tagz; end
-      Tagz.singleton_class{ define_method(:privately){ Tagz.namespace(:Privately) } }
     end
-    remove_const(:Namespace)
 
   # escape utils
   #
