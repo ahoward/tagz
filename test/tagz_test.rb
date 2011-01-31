@@ -10,6 +10,8 @@ $:.unshift '.'
 
 require 'tagz'
 
+Tagz.html_mode!
+
 class TagzTest < Test::Unit::TestCase
   include Tagz
 

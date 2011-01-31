@@ -4,11 +4,12 @@ unless defined? Tagz
 #
   module Tagz
     def Tagz.version()
-      '7.2.2'
+      '8.1.0'
     end
 
-    def Tagz.description()
-      <<-__
+    def Tagz.description
+      <<-____
+
         tagz.rb is generates html, xml, or any sgml variant like a small ninja
         running across the backs of a herd of giraffes swatting of heads like
         a mark-up weedwacker.  weighing in at less than 300 lines of code
@@ -18,13 +19,14 @@ unless defined? Tagz
         that generate html to be able to do so easily in any context without
         heavyweight syntax or scoping issues, like a ninja sword through
         butter.
-      __
+
+      ____
     end
 
   private
     # access tagz doc and enclose tagz operations
     #
-      def tagz document = nil, &block
+      def tagz(document = nil, &block)
         @tagz ||= nil ## shut wornings up
         previous = @tagz
 
@@ -43,9 +45,10 @@ unless defined? Tagz
         end
       end
 
+
     # open_tag
     #
-      def tagz__ name, *argv, &block
+      def tagz__(name, *argv, &block)
         options = argv.last.is_a?(Hash) ? argv.pop : {}
         content = argv
 
@@ -101,13 +104,13 @@ unless defined? Tagz
 
     # close_tag
     #
-      def __tagz tag, *a, &b
+      def __tagz(tag, *a, &b)
         tagz.push "</#{ tag }>"
       end
 
     # catch special tagz methods
     #
-      def method_missing m, *a, &b
+      def method_missing(m, *a, &b)
         strategy =
           case m.to_s
             when %r/^(.*[^_])_(!)?$/o
@@ -135,11 +138,14 @@ unless defined? Tagz
             m, bang = $1, $2
             b ||= lambda{} if bang
             tagz{ tagz__(m, *a, &b) }
+
           when :close_tag
             m = $1
             tagz{ __tagz(m, *a, &b) }
+
           when :element
             Tagz.element.new(*a, &b)
+
           when :puts
             tagz do
               tagz.push("\n")
@@ -205,7 +211,8 @@ unless defined? Tagz
             end
             self
           end
-          def concat string
+
+          def concat(string)
             self << string
           end
           #alias_method 'concat', '<<'
@@ -215,7 +222,7 @@ unless defined? Tagz
           end
           alias_method 'h', 'escape'
 
-          def puts string
+          def puts(string)
             write "#{ string }\n"
           end
 
@@ -235,11 +242,19 @@ unless defined? Tagz
           def to_str
             self
           end
+
+          def html_safe
+            self
+          end
+
+          def html_safe?
+            true
+          end
         end
         Tagz.singleton_class{ define_method(:document){ Tagz.namespace(:Document) } }
 
         class Element < ::String
-          def Element.attributes options
+          def Element.attributes(options)
             unless options.empty?
               ' ' << 
                 options.map do |key, value|
@@ -261,7 +276,7 @@ unless defined? Tagz
 
           attr 'name'
 
-          def initialize name, *argv, &block
+          def initialize(name, *argv, &block)
             options = {}
             content = []
 
@@ -447,11 +462,5 @@ unless defined? Tagz
     (argv.empty? and block.nil?) ? ::Tagz : Tagz.tagz(*argv, &block)
   end
 
-  if defined?(Rails)
-    _=ActionView,ActionView::Base,ActionController,ActionController::Base
-    ActionView::Base.send(:include, Tagz.globally)
-    ActionController::Base.send(:include, Tagz)
-  end
-
-  Tagz.html_mode!
+  Tagz.xml_mode!
 end
