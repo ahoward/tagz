@@ -660,13 +660,15 @@ class TagzTest < Test::Unit::TestCase
           tagz << 'e>f'
           __
           tagz.push 'g>h'
+          __
+          tagz.raw '<tag />'
         }
       end
     }.new
 
     actual = nil
     assert_nothing_raised{ actual=c.a}
-    expected = "<div>\na&gt;b\nc>d\ne&gt;f\ng>h</div>"
+    expected = "<div>\na&gt;b\nc>d\ne&gt;f\ng>h\n<tag /></div>"
     assert_equal expected, actual
   end
 

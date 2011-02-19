@@ -4,7 +4,7 @@ unless defined? Tagz
 #
   module Tagz
     def Tagz.version()
-      '8.1.0'
+      '8.2.0'
     end
 
     def Tagz.description
@@ -189,6 +189,10 @@ unless defined? Tagz
           }
         }
 
+        module HtmlSafe
+          attr_accessor :html_safe
+        end
+
         class Document < ::String
           def Document.for other
             Document === other ? other : Document.new(other.to_s)
@@ -207,7 +211,11 @@ unless defined? Tagz
               when Document
                 super string.to_s
               else
-                super Tagz.escape_content(string)
+                if string.respond_to?(:html_safe)
+                  super string.to_s
+                else
+                  super Tagz.escape_content(string)
+                end
             end
             self
           end
@@ -217,13 +225,18 @@ unless defined? Tagz
           end
           #alias_method 'concat', '<<'
 
-          def escape(*strings)
-            Tagz.xchar.escape(strings.join)
+          def escape(string)
+            return string if string.respond_to?(:html_safe)
+            Tagz.xchar.escape(string)
           end
           alias_method 'h', 'escape'
 
           def puts(string)
             write "#{ string }\n"
+          end
+
+          def raw(string)
+            push Document.for(string)
           end
 
           def document
@@ -347,6 +360,7 @@ unless defined? Tagz
           VALID = [[0x9, 0xA, 0xD], (0x20..0xD7FF), (0xE000..0xFFFD), (0x10000..0x10FFFF)]
 
           def XChar.escape(string)
+            return string if string.respond_to?(:html_safe)
             string.unpack('U*').map{|n| xchr(n)}.join # ASCII, UTF-8
           rescue
             string.unpack('C*').map{|n| xchr(n)}.join # ISO-8859-1, WIN-1252
