@@ -125,7 +125,7 @@ unless defined? Tagz
               nil
           end
 
-        if(strategy.nil? or (tagz.nil? and not Tagz.globally===self))
+        if(strategy.nil? or (tagz.nil? and not(Tagz===self or Tagz.globally===self)))
           begin
             super
           ensure
