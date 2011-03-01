@@ -4,7 +4,7 @@ unless defined? Tagz
 #
   module Tagz
     def Tagz.version()
-      '8.2.0'
+      '9.0.0'
     end
 
     def Tagz.description
@@ -55,8 +55,8 @@ unless defined? Tagz
         unless options.empty?
           attributes = ' ' << 
             options.map do |key, value|
-              key = Tagz.escape_attribute(key)
-              value = Tagz.escape_attribute(value)
+              key = Tagz.escape_key(key)
+              value = Tagz.escape_value(value)
               if value =~ %r/"/
                 raise ArgumentError, value if value =~ %r/'/
                 value = "'#{ value }'"
@@ -190,7 +190,20 @@ unless defined? Tagz
         }
 
         module HtmlSafe
-          attr_accessor :html_safe
+          def html_safe() @html_safe ||= true end
+          def html_safe?() html_safe end
+          def html_safe=(value) @html_safe = !!value end
+        end
+
+        def Tagz.html_safe(*args, &block)
+          if args.empty? and block.nil?
+            Tagz.namespace(:HtmlSafe)
+          else
+            string = args.join
+            string += block.call.to_s if block
+            string.extend(HtmlSafe)
+            string
+          end
         end
 
         class Document < ::String
@@ -223,7 +236,6 @@ unless defined? Tagz
           def concat(string)
             self << string
           end
-          #alias_method 'concat', '<<'
 
           def escape(string)
             return string if string.respond_to?(:html_safe)
@@ -271,8 +283,8 @@ unless defined? Tagz
             unless options.empty?
               ' ' << 
                 options.map do |key, value|
-                  key = Tagz.escape_attribute(key)
-                  value = Tagz.escape_attribute(value)
+                  key = Tagz.escape_key(key)
+                  value = Tagz.escape_value(value)
                   if value =~ %r/"/
                     raise ArgumentError, value if value =~ %r/'/
                     value = "'#{ value }'"
@@ -376,11 +388,20 @@ unless defined? Tagz
         end
         Tagz.singleton_class{ define_method(:xchar){ Tagz.namespace(:XChar) } }
 
-        NoEscapeProc = lambda{|*values| values.join}
-        Tagz.singleton_class{ define_method(:no_escape_proc){ Tagz.namespace(:NoEscapeProc) } }
+        NoEscapeContentProc = lambda{|*contents| contents.join}
+        Tagz.singleton_class{ define_method(:no_escape_content_proc){ Tagz.namespace(:NoEscapeContentProc) } }
+        EscapeContentProc = lambda{|*contents| Tagz.xchar.escape(contents.join)}
+        Tagz.singleton_class{ define_method(:escape_content_proc){ Tagz.namespace(:EscapeContentProc) } }
 
-        EscapeProc = lambda{|*values| Tagz.xchar.escape(values.join)}
-        Tagz.singleton_class{ define_method(:escape_proc){ Tagz.namespace(:EscapeProc) } }
+        NoEscapeKeyProc = lambda{|*values| values.join}
+        Tagz.singleton_class{ define_method(:no_escape_key_proc){ Tagz.namespace(:NoEscapeKeyProc) } }
+        EscapeKeyProc = lambda{|*values| Tagz.xchar.escape(values.join).gsub(/_/, '-')}
+        Tagz.singleton_class{ define_method(:escape_key_proc){ Tagz.namespace(:EscapeKeyProc) } }
+
+        NoEscapeValueProc = lambda{|*values| values.join}
+        Tagz.singleton_class{ define_method(:no_escape_value_proc){ Tagz.namespace(:NoEscapeValueProc) } }
+        EscapeValueProc = lambda{|*values| Tagz.xchar.escape(values.join)}
+        Tagz.singleton_class{ define_method(:escape_value_proc){ Tagz.namespace(:EscapeValueProc) } }
 
         module Globally; include Tagz; end
         Tagz.singleton_class{ define_method(:globally){ Tagz.namespace(:Globally) } }
@@ -399,54 +420,60 @@ unless defined? Tagz
       Tagz.xchar.escape(strings.join)
     end
 
-  # support for configuring attribute escaping
+  # raw utils
   #
-    def Tagz.escape_attribute!(*args, &block)
-      previous = @escape_attribute if defined?(@escape_attribute)
-      unless args.empty? and block.nil?
-        value = block ? block : args.shift
-        value = Tagz.escape_proc if value==true
-        value = Tagz.no_escape_proc if(value==false or value==nil)
-        @escape_attribute = value.to_proc
-        return previous
-      end
-      @escape_attribute
-    end
-    def Tagz.escape_attributes!(*args, &block)
-      Tagz.escape_attribute!(*args, &block)
-    end
-    def Tagz.escape_attribute(value)
-      @escape_attribute.call(value.to_s)
+    def Tagz.raw(*args, &block)
+      Tagz.html_safe(*args, &block)
     end
 
-  # support for configuring content escaping
+  # generate code for escape configuration
   #
-    def Tagz.escape_content!(*args, &block)
-      previous = @escape_content if defined?(@escape_content)
-      unless args.empty? and block.nil?
-        value = block ? block : args.shift
-        value = Tagz.escape_proc if value==true
-        value = Tagz.no_escape_proc if(value==false or value==nil)
-        @escape_content = value.to_proc
-        return previous
-      end
-      @escape_content
-    end
-    def Tagz.escape_contents!(*args, &block)
-      Tagz.escape_content!(*args, &block)
-    end
-    def Tagz.escape_content(value)
-      @escape_content.call(value.to_s)
+    %w( key value content ).each do |type|
+
+      module_eval <<-__, __FILE__, __LINE__
+        def Tagz.escape_#{ type }!(*args, &block)
+          previous = @escape_#{ type } if defined?(@escape_#{ type })
+          unless args.empty?
+            value = args.shift
+            value = Tagz.escape_#{ type }_proc if value==true
+            value = Tagz.no_escape_#{ type }_proc if(value==false or value==nil)
+            @escape_#{ type } = value.to_proc
+            if block
+              begin
+                return block.call()
+              ensure
+                @escape_#{ type } = previous
+              end
+            else
+              return previous
+            end
+          end
+          @escape_#{ type }
+        end
+
+        def Tagz.escape_#{ type }s!(*args, &block)
+          Tagz.escape_#{ type }!(*args, &block)
+        end
+
+        def Tagz.escape_#{ type }(value)
+          @escape_#{ type }.call(value.to_s)
+        end
+      __
+
     end
 
   # configure tagz escaping
   #
     def Tagz.escape!(options = {})
-      options = {:attributes => options, :content => options} unless options.is_a?(Hash)
-      escape_attributes = options[:attributes]||options['attributes']
-      escape_content = options[:content]||options['content']
-      Tagz.escape_attributes!(!!escape_attributes)
-      Tagz.escape_content!(!!escape_content)
+      options = {:keys => options, :values => options, :content => options} unless options.is_a?(Hash)
+
+      escape_keys = options[:keys]||options['keys']||options[:key]||options['key']
+      escape_values = options[:values]||options['values']||options[:value]||options['value']
+      escape_contents = options[:contents]||options['contents']||options[:content]||options['content']
+
+      Tagz.escape_keys!(!!escape_keys)
+      Tagz.escape_values!(!!escape_values)
+      Tagz.escape_contents!(!!escape_contents)
     end
     def Tagz.i_know_what_the_hell_i_am_doing!
       escape!(false)
@@ -456,13 +483,15 @@ unless defined? Tagz
     end
     def Tagz.xml_mode!
       Tagz.escape!(
-        :attributes => true,
-        :content => true
+        :keys => true,
+        :values => true,
+        :contents => true
       )
     end
     def Tagz.html_mode!
       Tagz.escape!(
-        :attributes => true,
+        :keys => true,
+        :values => false,
         :content => false
       )
     end
@@ -476,5 +505,5 @@ unless defined? Tagz
     (argv.empty? and block.nil?) ? ::Tagz : Tagz.tagz(*argv, &block)
   end
 
-  Tagz.xml_mode!
+  Tagz.escape!(true)
 end
