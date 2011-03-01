@@ -523,7 +523,7 @@ class TagzTest < Test::Unit::TestCase
 
   def test_440
     c = Class.new{
-      include Tagz
+      include Tagz.privately
       def foobar() tagz{ div_{ 'foobar' } } end
       def barfoo() div_{ 'barfoo' } end
     }.new
