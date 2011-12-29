@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 #
 # tagz.rb allows a safer method of mixin which requires any tagz methods to be
 # insider a tagz block - tagz generating methods outside a tagz block with

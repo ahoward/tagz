@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 #
 # tagz.rb can generate really compact html.  this is great to save bandwidth
 # but can sometimes make reading the generated html a bit rough.  of course

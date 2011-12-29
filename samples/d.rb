@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 #
 # tagz.rb doesn't cramp your style, allowing even invalid html to be
 # generated.  note the use of the 'tagz' method, which can be used both to

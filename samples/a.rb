@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 #
 # in the simplest case tagz generates html using a syntax which safely mixes
 # in to any object

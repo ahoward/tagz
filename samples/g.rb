@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 # tagz gives you low-level control of the output and makes even dashersized
 # xml tagz easy enough to work with
 #

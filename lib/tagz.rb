@@ -1,10 +1,11 @@
+# -*- encoding : utf-8 -*-
 unless defined? Tagz
 
 # core tagz functions
 #
   module Tagz
     def Tagz.version()
-      '9.0.0'
+      '9.1.0'
     end
 
     def Tagz.description

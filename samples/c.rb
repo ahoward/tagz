@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 #
 # once you've learned to generate html using tagz you're primed to generate
 # xml too

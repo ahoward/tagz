@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 #
 # tagz.rb mixes quite easily with your favourite templating engine, avoiding
 # the need for '<% rows.each do |row| %> ... <% row.each do |cell| %> '
