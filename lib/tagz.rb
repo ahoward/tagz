@@ -5,7 +5,7 @@ unless defined? Tagz
 #
   module Tagz
     def Tagz.version()
-      '9.1.0'
+      '9.2.0'
     end
 
     def Tagz.description
@@ -128,9 +128,9 @@ unless defined? Tagz
 
         if(strategy.nil? or (tagz.nil? and Tagz.privately===self))
           begin
-            super
+            return super
           ensure
-            $!.set_backtrace caller(skip=1) if $!
+            $!.set_backtrace caller(1) if $!
           end
         end
         
