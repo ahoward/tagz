@@ -5,7 +5,7 @@ unless defined? Tagz
 #
   module Tagz
     def Tagz.version()
-      '9.2.0'
+      '9.3.0'
     end
 
     def Tagz.description
@@ -52,23 +52,33 @@ unless defined? Tagz
       def tagz__(name, *argv, &block)
         options = argv.last.is_a?(Hash) ? argv.pop : {}
         content = argv
+        attributes = ''
 
         unless options.empty?
-          attributes = ' ' << 
-            options.map do |key, value|
-              key = Tagz.escape_key(key)
-              value = Tagz.escape_value(value)
-              if value =~ %r/"/
-                raise ArgumentError, value if value =~ %r/'/
-                value = "'#{ value }'"
-              else
-                raise ArgumentError, value if value =~ %r/"/
-                value = "\"#{ value }\""
-              end
-              [key, value].join('=')
-            end.join(' ')
-        else
-          attributes = ''
+          booleans = []
+          options.each do |key, value|
+            if key.to_s =~ Tagz.namespace(:Boolean)
+              value = value.to_s =~ %r/\Atrue\Z/imox ? nil : "\"#{ key.to_s.downcase.strip }\""
+              booleans.push([key, value].compact)
+              next
+            end
+
+            key = Tagz.escape_key(key)
+            value = Tagz.escape_value(value)
+
+            if value =~ %r/"/
+              raise ArgumentError, value if value =~ %r/'/
+              value = "'#{ value }'"
+            else
+              raise ArgumentError, value if value =~ %r/"/
+              value = "\"#{ value }\""
+            end
+
+            attributes << ' ' << [key, value].join('=')
+          end
+          booleans.each do |kv|
+            attributes << ' ' << kv.compact.join('=')
+          end
         end
 
         tagz.push "<#{ name }#{ attributes }>"
@@ -189,6 +199,21 @@ unless defined? Tagz
             end
           }
         }
+
+        Boolean = %r[
+          \A checked  \Z |
+          \A selected \Z |
+          \A disabled \Z |
+          \A readonly \Z |
+          \A multiple \Z |
+          \A ismap    \Z |
+          \A defer    \Z |
+          \A declare  \Z |
+          \A noresize \Z |
+          \A nowrap   \Z |
+          \A noshade  \Z |
+          \A compact  \Z 
+        ]iomx
 
         module HtmlSafe
           def html_safe() @html_safe ||= true end

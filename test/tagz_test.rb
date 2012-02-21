@@ -713,4 +713,14 @@ class TagzTest < Test::Unit::TestCase
       end
     }
   end
+
+  def test_540
+    expected = '<foo checked><bar selected="selected">foobar</bar></foo>'
+    actual = tagz{
+      foo_('checked' => true){
+        bar_(:selected => :selected){ 'foobar' }
+      }
+    }
+    assert_equal expected, actual
+  end
 end
