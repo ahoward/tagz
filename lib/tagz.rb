@@ -5,7 +5,7 @@ unless defined? Tagz
 #
   module Tagz
     def Tagz.version()
-      '9.3.0'
+      '9.4.0'
     end
 
     def Tagz.description
@@ -421,7 +421,7 @@ unless defined? Tagz
 
         NoEscapeKeyProc = lambda{|*values| values.join}
         Tagz.singleton_class{ define_method(:no_escape_key_proc){ Tagz.namespace(:NoEscapeKeyProc) } }
-        EscapeKeyProc = lambda{|*values| Tagz.xchar.escape(values.join).gsub(/_/, '-')}
+        EscapeKeyProc = lambda{|*values| Tagz.xchar.escape(values.join).sub(/\Adata_/imox, 'data-') }
         Tagz.singleton_class{ define_method(:escape_key_proc){ Tagz.namespace(:EscapeKeyProc) } }
 
         NoEscapeValueProc = lambda{|*values| values.join}
