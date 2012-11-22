@@ -4,8 +4,10 @@ unless defined? Tagz
 # core tagz functions
 #
   module Tagz
+    require 'cgi'
+
     def Tagz.version()
-      '9.5.0'
+      '9.6.0'
     end
 
     def Tagz.description
@@ -421,14 +423,12 @@ unless defined? Tagz
 
         NoEscapeKeyProc = lambda{|*values| values.join}
         Tagz.singleton_class{ define_method(:no_escape_key_proc){ Tagz.namespace(:NoEscapeKeyProc) } }
-        #EscapeKeyProc = lambda{|*values| Tagz.xchar.escape(values.join).sub(/\Adata_/imox, 'data-') }
-        EscapeKeyProc = lambda{|*values| values.join.sub(/\Adata_/imox, 'data-') }
+        EscapeKeyProc = lambda{|*values| Tagz.escapeAttribute(values).sub(/\Adata_/imox, 'data-') }
         Tagz.singleton_class{ define_method(:escape_key_proc){ Tagz.namespace(:EscapeKeyProc) } }
 
         NoEscapeValueProc = lambda{|*values| values.join}
         Tagz.singleton_class{ define_method(:no_escape_value_proc){ Tagz.namespace(:NoEscapeValueProc) } }
-        #EscapeValueProc = lambda{|*values| Tagz.xchar.escape(values.join)}
-        EscapeValueProc = lambda{|*values| values.join}
+        EscapeValueProc = lambda{|*values| Tagz.escapeAttribute(values)}
         Tagz.singleton_class{ define_method(:escape_value_proc){ Tagz.namespace(:EscapeValueProc) } }
 
         module Globally; include Tagz; end
@@ -446,6 +446,9 @@ unless defined? Tagz
     end
     def Tagz.escape(*strings)
       Tagz.xchar.escape(strings.join)
+    end
+    def Tagz.escapeAttribute(*strings)
+      CGI.escapeHTML(strings.join)
     end
 
   # raw utils

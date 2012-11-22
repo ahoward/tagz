@@ -475,11 +475,11 @@ class TagzTest < Test::Unit::TestCase
   end
 
   def test_390
-    expected = '<div class="bar&foo>">foo&amp;bar&gt;</div>'
+    expected = '<div class="bar&amp;foo&gt;">foo&amp;bar&gt;</div>'
     actual = tagz{ div_(:class => 'bar&foo>'){ 'foo&bar>' } }
     assert_equal expected, actual
 
-    expected = %|<div class="bar&foo>">#{ expected }</div>|
+    expected = %|<div class="bar&amp;foo&gt;">#{ expected }</div>|
     actual = tagz{ div_(:class => 'bar&foo>'){ actual } }
     assert_equal expected, actual
   end
@@ -561,7 +561,7 @@ class TagzTest < Test::Unit::TestCase
 
     actual = nil
     assert_nothing_raised{ actual=c.a}
-    expected = %(<div a>b="a>b">content</div>)
+    expected = %(<div a&gt;b="a&gt;b">content</div>)
     assert_equal expected, actual
 
     Tagz.escape_keys!(false) do
@@ -722,5 +722,12 @@ class TagzTest < Test::Unit::TestCase
       }
     }
     assert_equal expected, actual
+  end
+
+
+  def test_550
+    assert_nothing_raised{
+      Tagz{ div_(:title => "foo' bar\""){ "foobar" } }
+    }
   end
 end
