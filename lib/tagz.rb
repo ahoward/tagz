@@ -207,6 +207,7 @@ unless defined? Tagz
           \A selected \Z |
           \A disabled \Z |
           \A readonly \Z |
+          \A autofocus \Z |
           \A multiple \Z |
           \A ismap    \Z |
           \A defer    \Z |
