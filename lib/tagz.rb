@@ -7,7 +7,7 @@ unless defined? Tagz
     require 'cgi'
 
     def Tagz.version()
-      '9.6.0'
+      '9.6.1'
     end
 
     def Tagz.description
@@ -218,20 +218,23 @@ unless defined? Tagz
           \A compact  \Z 
         ]iomx
 
-        module HtmlSafe
+        class HtmlSafe < ::String
           def html_safe() @html_safe ||= true end
           def html_safe?() html_safe end
           def html_safe=(value) @html_safe = !!value end
         end
 
         def Tagz.html_safe(*args, &block)
+          if args.size == 1 and args.first.respond_to?(:html_safe?)
+            return args.first
+          end
+
           if args.empty? and block.nil?
             Tagz.namespace(:HtmlSafe)
           else
             string = args.join
             string += block.call.to_s if block
-            string.extend(HtmlSafe)
-            string
+            HtmlSafe.new(string)
           end
         end
 

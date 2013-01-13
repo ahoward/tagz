@@ -730,4 +730,20 @@ class TagzTest < Test::Unit::TestCase
       Tagz{ div_(:title => "foo' bar\""){ "foobar" } }
     }
   end
+
+  def test_600
+    value = '&lt;&gt;'
+    html_safe = Tagz.html_safe(value)
+    assert_equal(value, html_safe)
+    assert_equal(false, value.respond_to?(:html_safe?))
+    assert_equal(false, value.respond_to?(:html_safe))
+    assert_equal(true, html_safe.respond_to?(:html_safe?))
+    assert_equal(true, html_safe.respond_to?(:html_safe))
+  end
+
+  def test_610
+    value = Tagz.html_safe.new('foobar')
+    html_safe = Tagz.html_safe(value)
+    assert_equal value.object_id, html_safe.object_id
+  end
 end
