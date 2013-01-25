@@ -7,7 +7,7 @@ unless defined? Tagz
     require 'cgi'
 
     def Tagz.version()
-      '9.6.1'
+      '9.6.2'
     end
 
     def Tagz.description
@@ -536,7 +536,11 @@ unless defined? Tagz
     %w( tagz tagz__ __tagz method_missing ).each{|m| module_function(m)}
   end
 
-  def Tagz *argv, &block
+  def Tagz(*argv, &block)
+    (argv.empty? and block.nil?) ? ::Tagz : Tagz.tagz(*argv, &block)
+  end
+
+  def Tagz_(*argv, &block)
     (argv.empty? and block.nil?) ? ::Tagz : Tagz.tagz(*argv, &block)
   end
 
