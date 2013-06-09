@@ -257,9 +257,6 @@ unless defined? Tagz
           end
           alias_method 'e', 'element'
 
-          alias_method 'write', 'concat'
-          alias_method 'push', 'concat'
-
           def << string
             if string.respond_to?(:html_safe?) and string.html_safe?
               super string.to_s
@@ -273,6 +270,8 @@ unless defined? Tagz
           def concat(string)
             self << string
           end
+          alias_method 'write', 'concat'
+          alias_method 'push', 'concat'
 
           def escape(string)
             Tagz.escape(string)
