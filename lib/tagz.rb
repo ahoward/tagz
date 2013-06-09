@@ -7,7 +7,7 @@ unless defined? Tagz
     require 'cgi'
 
     def Tagz.version()
-      '9.7.0'
+      '9.8.0'
     end
 
     def Tagz.description
@@ -219,9 +219,20 @@ unless defined? Tagz
         ]iomx
 
         class HtmlSafe < ::String
-          def html_safe() @html_safe ||= true end
-          def html_safe?() html_safe end
-          def html_safe=(value) @html_safe = !!value end
+          def HtmlSafe.for(*args, &block)
+            string = args.join
+
+            if block
+              string += block.call.to_s
+            end
+
+            new.tap do |html_safe|
+              html_safe.replace(string)
+            end
+          end
+
+          def html_safe() self end
+          def html_safe?() true end
         end
 
         def Tagz.html_safe(*args, &block)
@@ -232,9 +243,7 @@ unless defined? Tagz
           if args.empty? and block.nil?
             Tagz.namespace(:HtmlSafe)
           else
-            string = args.join
-            string += block.call.to_s if block
-            HtmlSafe.new(string)
+            HtmlSafe.for(*args, &block)
           end
         end
 
@@ -256,7 +265,7 @@ unless defined? Tagz
               when Document
                 super string.to_s
               else
-                if string.respond_to?(:html_safe)
+                if string.respond_to?(:html_safe?) and string.html_safe?
                   super string.to_s
                 else
                   super Tagz.escape_content(string)
@@ -270,7 +279,6 @@ unless defined? Tagz
           end
 
           def escape(string)
-            return string if string.respond_to?(:html_safe)
             Tagz.escape(string)
           end
           alias_method 'h', 'escape'
