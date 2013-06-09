@@ -260,17 +260,13 @@ unless defined? Tagz
           alias_method 'write', 'concat'
           alias_method 'push', 'concat'
 
-          def << string 
-            case string
-              when Document
-                super string.to_s
-              else
-                if string.respond_to?(:html_safe?) and string.html_safe?
-                  super string.to_s
-                else
-                  super Tagz.escape_content(string)
-                end
+          def << string
+            if string.respond_to?(:html_safe?) and string.html_safe?
+              super string.to_s
+            else
+              super Tagz.escape_content(string)
             end
+
             self
           end
 
