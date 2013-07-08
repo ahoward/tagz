@@ -7,7 +7,7 @@ unless defined? Tagz
     require 'cgi'
 
     def Tagz.version()
-      '9.8.0'
+      '9.9.0'
     end
 
     def Tagz.description
@@ -218,37 +218,18 @@ unless defined? Tagz
           \A compact  \Z 
         ]iomx
 
-        class HtmlSafe < ::String
-          def HtmlSafe.for(*args, &block)
-            string = args.join
-
-            if block
-              string += block.call.to_s
-            end
-
-            new.tap do |html_safe|
-              html_safe.replace(string)
-            end
+        class HTMLSafe < ::String
+          def html_safe
+            self
           end
 
-          def html_safe() self end
-          def html_safe?() true end
-        end
-
-        def Tagz.html_safe(*args, &block)
-          if args.size == 1 and args.first.respond_to?(:html_safe?)
-            return args.first
-          end
-
-          if args.empty? and block.nil?
-            Tagz.namespace(:HtmlSafe)
-          else
-            HtmlSafe.for(*args, &block)
+          def html_safe?
+            true
           end
         end
 
-        class Document < ::String
-          def Document.for other
+        class Document < HTMLSafe
+          def Document.for(other)
             Document === other ? other : Document.new(other.to_s)
           end
 
@@ -257,21 +238,22 @@ unless defined? Tagz
           end
           alias_method 'e', 'element'
 
-          def << string
-            if string.respond_to?(:html_safe?) and string.html_safe?
-              super string.to_s
+          alias_method 'write', 'concat'
+          alias_method 'push', 'concat'
+
+          def << obj
+            if obj.respond_to?(:html_safe?) and obj.html_safe?
+              super obj.to_s
             else
-              super Tagz.escape_content(string)
+              super Tagz.escape_content(obj)
             end
 
             self
           end
 
-          def concat(string)
-            self << string
+          def concat(obj)
+            self << obj
           end
-          alias_method 'write', 'concat'
-          alias_method 'push', 'concat'
 
           def escape(string)
             Tagz.escape(string)
@@ -301,14 +283,6 @@ unless defined? Tagz
 
           def to_str
             self
-          end
-
-          def html_safe
-            self
-          end
-
-          def html_safe?
-            true
           end
         end
         Tagz.singleton_class{ define_method(:document){ Tagz.namespace(:Document) } }
@@ -400,6 +374,29 @@ unless defined? Tagz
 
   # raw utils
   #
+    def Tagz.html_safe(*args, &block)
+      html_safe = namespace(:HTMLSafe)
+
+      if args.empty? and block.nil?
+        return html_safe
+      end
+
+      first = args.first
+
+      case
+        when first.is_a?(html_safe)
+          return first
+
+        when args.size == 1
+          string = first
+          html_safe.new(string)
+
+        else
+          string = [args, (block ? block.call : nil)].flatten.compact.join(' ')
+          html_safe.new(string)
+      end
+    end
+
     def Tagz.raw(*args, &block)
       Tagz.html_safe(*args, &block)
     end
