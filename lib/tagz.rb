@@ -7,7 +7,7 @@ unless defined? Tagz
     require 'cgi'
 
     def Tagz.version()
-      '9.9.0'
+      '9.9.1'
     end
 
     def Tagz.description
@@ -35,10 +35,20 @@ unless defined? Tagz
 
         if block
           @tagz ||= (Tagz.document.for(document) || Tagz.document.new)
+
           begin
-            size = @tagz.size
-            value = instance_eval(&block)
-            @tagz << value unless(@tagz.size > size)
+            previous_size = @tagz.size
+
+            content = instance_eval(&block)
+
+            current_size = @tagz.size
+
+            content_was_added = current_size > previous_size
+
+            unless content_was_added
+              @tagz << content
+            end
+
             @tagz
           ensure
             @tagz = previous
@@ -362,14 +372,40 @@ unless defined? Tagz
 
   # escape utils
   #
+    def Tagz.escape_html_map
+      @escape_html_map ||= { '&' => '&amp;',  '>' => '&gt;',   '<' => '&lt;', '"' => '&quot;', "'" => '&#39;' }
+    end
+
+    def Tagz.escape_html_once_regexp
+      @escape_html_once_regexp ||= /["><']|&(?!([a-zA-Z]+|(#\d+));)/
+    end
+
+    def Tagz.escape_html(s)
+      s = s.to_s
+
+      if Tagz.html_safe?(s)
+        s
+      else
+        Tagz.html_safe(s.gsub(/[&"'><]/, Tagz.escape_html_map))
+      end
+    end
+
+    def Tagz.escape_html_once(s)
+      result = s.to_s.gsub(Tagz.html_escape_once_regexp){|_| Tagz.escape_html_map[_]}
+
+      Tagz.html_safe?(s) ? Tagz.html_safe(result) : result
+    end
+
     def Tagz.escapeHTML(*strings)
-      CGI.escapeHTML(strings.join)
+      Tagz.escape_html(strings.join)
     end
+
     def Tagz.escape(*strings)
-      CGI.escapeHTML(strings.join)
+      Tagz.escape_html(strings.join)
     end
+
     def Tagz.escapeAttribute(*strings)
-      CGI.escapeHTML(strings.join)
+      Tagz.escape_html(strings.join)
     end
 
   # raw utils
@@ -397,8 +433,16 @@ unless defined? Tagz
       end
     end
 
+    def Tagz.html_safe?(string)
+      string.html_safe? rescue false
+    end
+
     def Tagz.raw(*args, &block)
       Tagz.html_safe(*args, &block)
+    end
+
+    def Tagz.h(string)
+      Tagz.escape_html(string)
     end
 
   # generate code for escape configuration
