@@ -7,7 +7,7 @@ unless defined? Tagz
     require 'cgi'
 
     def Tagz.version()
-      '9.9.1'
+      '9.9.2'
     end
 
     def Tagz.description
@@ -235,6 +235,10 @@ unless defined? Tagz
 
           def html_safe?
             true
+          end
+
+          def to_s
+            self
           end
         end
 

@@ -746,4 +746,10 @@ class TagzTest < Test::Unit::TestCase
     html_safe = Tagz.html_safe(value)
     assert_equal value.object_id, html_safe.object_id
   end
+
+  def test_620
+    expected = '<div>&#215;</div>'
+    actual = Tagz{ div_{ Tagz.html_safe('&#215;') }  }
+    assert_equal expected, actual
+  end
 end
