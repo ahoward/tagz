@@ -7,7 +7,7 @@ unless defined? Tagz
     require 'cgi'
 
     def Tagz.version()
-      '9.9.2'
+      '9.10.0'
     end
 
     def Tagz.description
