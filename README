@@ -93,10 +93,12 @@ INSTALL
 
 URIS
 
-  http://github.com/ahoward/tagz/tree/master
-  http://rubyforge.org/projects/codeforpeople
+  https://github.com/ahoward/tagz/tree/master
 
 HISTORY
+  7.2.0
+    - ruby19 compat
+
   7.0.0
     - * IMPORTANT * NOT BACKWARD COMPATIBLE (thus version bump)
     the tagz functionality itself has not changed, but the defaults for
