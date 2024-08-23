@@ -64,7 +64,7 @@ unless defined? Tagz
       def tagz__(name, *argv, &block)
         options = argv.last.is_a?(Hash) ? argv.pop : {}
         content = argv
-        attributes = ''
+        attributes = +''
 
         unless options.empty?
           booleans = []
@@ -305,7 +305,7 @@ unless defined? Tagz
         class Element < ::String
           def Element.attributes(options)
             unless options.empty?
-              ' ' << 
+              +' ' << 
                 options.map do |key, value|
                   key = Tagz.escape_key(key)
                   value = Tagz.escape_value(value)
