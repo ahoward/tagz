@@ -169,7 +169,7 @@ task :gem => [:clean, :gemspec] do
 end
 
 task :readme do
-  samples = ''
+  samples = +''
   prompt = '~ > '
   lib = This.lib
   version = This.version
