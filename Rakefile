@@ -97,7 +97,7 @@ task :gemspec do
     This.extensions = []
     extensions = This.extensions
     %w( Makefile configure extconf.rb ).each do |ext|
-      extensions << ext if File.exists?(ext)
+      extensions << ext if File.exist?(ext)
     end
   end
   extensions = [extensions].flatten.compact
