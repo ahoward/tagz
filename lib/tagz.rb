@@ -152,7 +152,7 @@ unless defined? Tagz
           begin
             return super
           ensure
-            :do_nothing_until_strange_core_dump_in_ruby_2_5_is_fixed
+            _ = :do_nothing_until_strange_core_dump_in_ruby_2_5_is_fixed
             # $!.set_backtrace caller(1) if $!
           end
         end
