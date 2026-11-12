@@ -4,7 +4,7 @@ unless defined? Tagz
 # core tagz functions
 #
   module Tagz
-    require 'cgi'
+    require 'cgi/escape'
 
     def Tagz.version()
       '9.10.0'
